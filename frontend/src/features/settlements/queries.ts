@@ -7,6 +7,7 @@ import {
   getAccountFees,
   getAccountSettlements,
   getFeeTypes,
+  getImportSettlements,
   getNextBatchNumber,
   getSettlement,
   getSettlementTransactions,
@@ -85,6 +86,9 @@ export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page:
 
 /** The attempts of an import, newest first (GET /imports/{id}/settlements). */
 export const importSettlementsKey = (importId: string) => [...importKey(importId), 'settlements'] as const
+
+export const importSettlementsQuery = (importId: string) =>
+  queryOptions({ queryKey: importSettlementsKey(importId), queryFn: () => getImportSettlements(importId) })
 
 /** Every proposed number of the account: what undoing an attempt makes stale. */
 export const accountBatchNumbersPrefix = (accountId: string) => ['accounts', accountId, 'batch-number'] as const

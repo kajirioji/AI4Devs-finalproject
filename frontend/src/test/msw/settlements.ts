@@ -30,6 +30,8 @@ import type {
   ChannelToAssign,
   Cycle as CycleCode,
   FeeTypeView,
+  ImportSettlementAttempt,
+  ImportSettlements,
   NextBatchNumber,
   SettlementFigures,
   SettlementMovement,
@@ -326,6 +328,8 @@ function freshState() {
     accountSettlements: new Map<string, AccountSettlement[]>(),
     /** The movements of each `batchId:cycle`, in the order of the API. */
     movements: new Map<string, SettlementMovement[]>(),
+    /** What GET /imports/{id}/settlements answers for an import; otherwise, its attempts in the fake. */
+    importSettlements: new Map<string, ImportSettlements>(),
     fixtures: new Map<string, PreviewFixture>(),
     nextNumbers: new Map<string, NextBatchNumber>(),
     scripts: new Map<string, PreviewStep[]>(),
@@ -578,6 +582,27 @@ export function paidHistory(_accountId: string, count: number, lastBatchNo = 122
 /** The attempts GET /accounts/{id}/settlements serves for an account, already in the order of the API. */
 export function seedAccountSettlements(accountId: string, items: AccountSettlement[]) {
   state.accountSettlements.set(accountId, items)
+}
+
+/** An attempt of an import as GET /imports/{id}/settlements shows it: by default, processed and current. */
+export function importAttempt(overrides: Partial<ImportSettlementAttempt> = {}): ImportSettlementAttempt {
+  return {
+    batchId: nextId('7d1c2b3a'),
+    batchNo: 118,
+    attemptNo: 1,
+    status: 'processed',
+    settledStatus: 'pending_payment',
+    processedAt: auditInstant('2026-10-19T15:40:03.120Z'),
+    approvedBy: userRef('analyst'),
+    amountPayable: '33771.3600',
+    isCurrent: true,
+    ...overrides,
+  }
+}
+
+/** What GET /imports/{id}/settlements serves for an import, already in the order of the API. */
+export function seedImportSettlements(importId: string, attempts: ImportSettlements) {
+  state.importSettlements.set(importId, attempts)
 }
 
 /** A movement as the contract example for #13 shows it: an E deposit of batch-clean, not settled. */
@@ -912,6 +937,38 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
             )
           }
           return HttpResponse.json(createAttempt(record, fixture, request, user, batchNo), { status: 201 })
+        },
+        caller,
+      ),
+    ),
+
+    http.get(
+      `${API}/imports/:importId/settlements`,
+      route(
+        'importSettlements',
+        ({ params, user }) => {
+          const importId = String(params.importId)
+          const seeded = state.importSettlements.get(importId)
+          if (seeded) return HttpResponse.json(seeded)
+          const record = visibleImport(user, importId)
+          if (!record) return notFound('Import')
+          const items = [...state.attempts.values()]
+            .filter((view) => view.importId === importId)
+            .map((view) =>
+              importAttempt({
+                batchId: view.batchId,
+                batchNo: view.batchNo,
+                attemptNo: view.attemptNo,
+                status: view.status,
+                settledStatus: view.settledStatus,
+                processedAt: view.processedAt,
+                approvedBy: view.approvedBy,
+                amountPayable: view.amountPayable,
+                isCurrent: record.currentBatchId === view.batchId,
+              }),
+            )
+            .reverse()
+          return HttpResponse.json({ importId, currentBatchId: record.currentBatchId, items })
         },
         caller,
       ),

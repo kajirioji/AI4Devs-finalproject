@@ -57,11 +57,11 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 ## 7. Frontend: tras deshacer e intentos del import
 
-- [ ] 7.1 Mostrar en `SummaryHeader` quién pagó o deshizo, cuándo y el motivo, y **Go to Analysis & Validations**; verificar con tests de los escenarios "Deshacer" y "Volver a Analysis", incluido el aviso `settlement_undone` en `InvalidatedReviewNotice`
-- [ ] 7.2 Implementar `SummaryAttempts` sobre `GET /imports/{id}/settlements`, con su query invalidada tras cada acción; verificar con "Intentos tras reprocesar" y "Un solo intento"
-- [ ] 7.3 Verificar con un test el escenario "Reprocesar con el mismo número" de Settlement Review
-- [ ] 7.4 Crear `e2e/screenshots/settlement-lifecycle.ts` y el script `screenshots:settlement-lifecycle` (en `e2e/package.json` y en la raíz), siguiendo a `settlements-browse.ts`; verificar con `pnpm typecheck` (se ejecuta en 9.3)
-- [ ] 7.5 Commit: feat(web): intento deshecho, vuelta a Analysis e historial de intentos
+- [x] 7.1 Mostrar en `SummaryHeader` quién pagó o deshizo, cuándo y el motivo, y **Go to Analysis & Validations**; verificar con tests de los escenarios "Deshacer" y "Volver a Analysis", incluido el aviso `settlement_undone` en `InvalidatedReviewNotice`
+- [x] 7.2 Implementar `SummaryAttempts` sobre `GET /imports/{id}/settlements`, con su query invalidada tras cada acción; verificar con "Intentos tras reprocesar" y "Un solo intento"
+- [x] 7.3 Verificar con un test el escenario "Reprocesar con el mismo número" de Settlement Review
+- [x] 7.4 Crear `e2e/screenshots/settlement-lifecycle.ts` y el script `screenshots:settlement-lifecycle` (en `e2e/package.json` y en la raíz), siguiendo a `settlements-browse.ts`; verificar con `pnpm typecheck` (se ejecuta en 9.3)
+- [x] 7.5 Commit: feat(web): intento deshecho, vuelta a Analysis e historial de intentos
 
 ## 8. Documentación
 

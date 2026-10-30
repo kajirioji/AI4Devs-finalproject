@@ -113,6 +113,10 @@ export type AccountSettlementsQuery = NonNullable<paths[AccountSettlementsPath][
 /** The date `from` and `to` filter: the business settlement date or the New York day of the processing instant. */
 export type SettlementDateField = NonNullable<AccountSettlementsQuery['dateField']>
 
+/** The attempts of an import, newest first (#12). */
+export type ImportSettlements = Dated<ApiResponse<ProcessPath, 'get'>>
+export type ImportSettlementAttempt = ImportSettlements['items'][number]
+
 /** The movements of one cycle of an attempt, in the stable order of #12. */
 export type SettlementTransactionsPage = Dated<ApiResponse<TransactionsPath, 'get'>>
 export type SettlementMovement = SettlementTransactionsPage['items'][number]
@@ -152,6 +156,11 @@ export const processSettlement = (importId: string, body: SettlementRequest) =>
 /** The attempt as written; the same SettlementView as the 201 of processing. */
 export const getSettlement = (batchId: string) =>
   unwrap(api.GET('/api/v1/settlements/{batchId}', { params: { path: { batchId } } })) as Promise<SettlementView>
+
+export const getImportSettlements = (importId: string) =>
+  unwrap(
+    api.GET('/api/v1/imports/{importId}/settlements', { params: { path: { importId } } }),
+  ) as Promise<ImportSettlements>
 
 export const paySettlement = (batchId: string) =>
   unwrap(api.POST('/api/v1/settlements/{batchId}/pay', { params: { path: { batchId } } })) as Promise<SettlementView>

@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
@@ -22,6 +23,15 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
     ],
     [s.grid.processedBy, s.byAt(view.approvedBy.userName, formatAuditDateTime(view.processedAt))],
     [s.grid.settlementDate, view.settlementDate ? formatBusinessDate(view.settlementDate) : s.notSet],
+    ...(view.paidBy && view.paidAt
+      ? ([[s.grid.paidBy, s.byAt(view.paidBy.userName, formatAuditDateTime(view.paidAt))]] as [string, ReactNode][])
+      : []),
+    ...(view.undoneBy && view.undoneAt
+      ? ([
+          [s.grid.undoneBy, s.byAt(view.undoneBy.userName, formatAuditDateTime(view.undoneAt))],
+          [s.grid.undoReason, view.undoReason],
+        ] as [string, ReactNode][])
+      : []),
   ]
 
   return (
@@ -42,6 +52,18 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
         // The payment is still pending: the colours of the tone of the status Badge (design D8, status notice).
         <p data-tone={tone} className={`rounded-md border p-2 text-sm ${TONE_NOTICE_CLASS[tone]}`}>
           {s.notSettled}
+        </p>
+      )}
+      {view.status === 'undone' && (
+        <p className="text-sm">
+          <Link
+            to="/imports/$importId"
+            params={{ importId: view.importId }}
+            search={{ step: 'analysis' }}
+            className="text-primary underline underline-offset-4"
+          >
+            {s.goToAnalysis}
+          </Link>
         </p>
       )}
     </section>

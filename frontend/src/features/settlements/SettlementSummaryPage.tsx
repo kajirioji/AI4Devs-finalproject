@@ -11,6 +11,7 @@ import type { Cycle, SettlementView } from './contract'
 import { TotalsByBrand, TotalsByType } from './FiguresTables'
 import { PayableBreakdown } from './PayableBreakdown'
 import { settlementQuery } from './queries'
+import { SummaryAttempts } from './SummaryAttempts'
 import { SummaryExports } from './SummaryExports'
 import { SummaryFees, SummaryReserves } from './SummaryFees'
 import { SummaryHeader } from './SummaryHeader'
@@ -76,6 +77,7 @@ function Summary({ view }: { view: SettlementView }) {
   return (
     <section className="flex flex-col gap-4">
       <SummaryHeader view={view} />
+      <SummaryAttempts view={view} />
       <Tabs
         value={tab}
         // A new history entry per tab: Back returns to the previous one.
