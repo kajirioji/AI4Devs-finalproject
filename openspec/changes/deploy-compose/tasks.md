@@ -42,7 +42,7 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 - [ ] 5.1 Añadir el job `images` a `.github/workflows/ci.yml` (design D10), sin publicar, y `feature/entrega-3-MVP` a `on.push.branches`. Verificar en el PR: check en verde y ninguna imagen subida
 - [ ] 5.2 Verificar el job rompiendo un Dockerfile a propósito en un commit temporal: el check falla. Revertir ese commit
-- [ ] 5.3 Commit: `ci: construir las imágenes de despliegue en los pull requests`
+- [x] 5.3 Commit: `ci: construir las imágenes de despliegue en los pull requests`
 
 ## 6. Documentación
 

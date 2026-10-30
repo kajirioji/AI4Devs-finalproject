@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [feature/entrega-2-MVP, final-project-MVP, main]
+    branches: [feature/entrega-2-MVP, feature/entrega-3-MVP, final-project-MVP, main]
   pull_request:
 
 permissions:
@@ -74,6 +74,51 @@ jobs:
           pnpm db:migrate
           pnpm db:seed
       - run: pnpm --filter @recon/backend test:integration
+
+  images:
+    name: deployment images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: runtime
+          push: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+      - name: Migration and seed image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: ops
+          push: false
+          cache-from: type=gha,scope=api
+      - name: Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+      - name: Deployment configuration
+        # The template leaves secrets empty on purpose; these placeholders only let Compose interpolate.
+        env:
+          MSSQL_SA_PASSWORD: ci-placeholder
+          RECON_APP_PASSWORD: ci-placeholder
+          RECON_MIGRATOR_PASSWORD: ci-placeholder
+          JWT_SECRET: ci-placeholder
+          SEED_PASSWORD: ci-placeholder
+        run: |
+          base=(docker compose --env-file infra/.env.deploy.example --profile ops -f infra/docker-compose.deploy.yml)
+          "${base[@]}" config -q
+          "${base[@]}" -f infra/docker-compose.deploy.debug.yml config -q
+          "${base[@]}" -f infra/docker-compose.deploy.external-db.yml config -q
 
   security:
     name: gitleaks
