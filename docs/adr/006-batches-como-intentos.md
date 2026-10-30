@@ -28,4 +28,4 @@ Opción 2. Deshacer marca el intento `undone`, con autor y motivo, y permite un 
   - `CK_SettlementBatch_attemptNo` (> 0);
   - `UX_SettlementBatch_active_accountBatchNo` y `UX_SettlementBatch_active_import` con `WHERE status <> 'undone'`.
 - El número del intento siguiente se calcula en `settlement/domain/batch-number.ts`.
-- El caso de uso de deshacer y su pantalla quedan para la Entrega 3 (#79). El esquema ya admite los intentos `undone`.
+- Deshacer (`POST /settlements/{id}/undo`) marca el intento `undone`, devuelve el import a `analyzed` y supera su corrida vigente; procesar de nuevo toma el intento siguiente (change `settlement-lifecycle`, #79).
