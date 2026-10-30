@@ -168,3 +168,58 @@ describe('POST /settlements/{id}/unpay', () => {
     })
   })
 })
+
+describe('POST /settlements/{id}/undo', () => {
+  const UNDO = { reason: 'Wrong settlement date' }
+
+  it('answers 200 to analyst, with the reason', async () => {
+    await app()
+    const res = await post(`${EXAMPLE_BATCH_ID}/undo`, 'analyst', UNDO)
+    expect(res.statusCode, res.body).toBe(200)
+    expect(SettlementView.parse(res.json())).toEqual(exampleView())
+    expect(repository.calls[0]).toMatchObject({ action: 'undo', ...UNDO })
+  })
+
+  it('answers 401 without a token', async () => {
+    await app()
+    expect((await post(`${EXAMPLE_BATCH_ID}/undo`, undefined, UNDO)).statusCode).toBe(401)
+  })
+
+  it.each(['viewer', 'payments'])('answers 403 to %s, even for an attempt that does not exist', async (user) => {
+    await app()
+    for (const id of [EXAMPLE_BATCH_ID, UNKNOWN]) {
+      const res = await post(`${id}/undo`, user, UNDO)
+      expect(res.statusCode, res.body).toBe(403)
+      expect(ErrorResponse.parse(res.json()).code).toBe('forbidden')
+    }
+  })
+
+  it.each([
+    ['missing', {}],
+    ['blank', { reason: '   ' }],
+    ['too long', { reason: 'x'.repeat(501) }],
+  ])('answers 400 validation_error to a %s reason', async (_name, body) => {
+    await app()
+    const res = await post(`${EXAMPLE_BATCH_ID}/undo`, 'analyst', body)
+    expect(res.statusCode, res.body).toBe(400)
+    expect(repository.calls).toEqual([])
+  })
+
+  it('answers the same 404 for an unknown attempt and for one outside the scope', async () => {
+    await app()
+    const viewerScoped = ctx!.users.users.find((u) => u.userName === 'analyst')!
+    viewerScoped.assignedMerchantIds = [1]
+    expect((await post(`${UNKNOWN}/undo`, 'analyst', UNDO)).statusCode).toBe(404)
+    expect((await post(`${FOREIGN}/undo`, 'analyst', UNDO)).statusCode).toBe(404)
+  })
+
+  it('answers 409 settlement_payment_not_removed from paid', async () => {
+    await app('paid')
+    const res = await post(`${EXAMPLE_BATCH_ID}/undo`, 'analyst', UNDO)
+    expect(res.statusCode).toBe(409)
+    expect(ErrorResponse.parse(res.json())).toMatchObject({
+      code: 'settlement_payment_not_removed',
+      details: { status: 'paid' },
+    })
+  })
+})

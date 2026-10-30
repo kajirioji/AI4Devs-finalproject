@@ -104,3 +104,47 @@ describe('the error of a paid attempt', () => {
     expect(error.message).toContain('remove the payment')
   })
 })
+
+describe('SettlementLifecycleService.undo', () => {
+  it('undoes a processed attempt with its import and the reason', async () => {
+    const { service, repository } = build()
+
+    await expect(service.undo(SCOPE, USER, EXAMPLE_BATCH_ID, 'Wrong settlement date')).resolves.toEqual(exampleView())
+
+    expect(repository.calls).toEqual([
+      {
+        action: 'undo',
+        batchId: EXAMPLE_BATCH_ID,
+        importId: BATCH_HEADER.importId,
+        userId: USER,
+        now: NOW,
+        reason: 'Wrong settlement date',
+      },
+    ])
+  })
+
+  it('answers settlement_payment_not_removed from paid, without writing', async () => {
+    const { service, repository } = build('paid')
+
+    await expect(service.undo(SCOPE, USER, EXAMPLE_BATCH_ID, 'reason')).rejects.toBeInstanceOf(
+      SettlementPaymentNotRemovedError,
+    )
+    expect(repository.calls).toEqual([])
+  })
+
+  it('answers settlement_not_processed from undone', async () => {
+    const { service } = build('undone')
+
+    await expect(service.undo(SCOPE, USER, EXAMPLE_BATCH_ID, 'reason')).rejects.toMatchObject({
+      code: 'settlement_not_processed',
+      details: { status: 'undone' },
+    })
+  })
+
+  it('answers the same 404 outside the scope', async () => {
+    const { service, repository } = build()
+
+    await expect(service.undo(SCOPE, USER, FOREIGN, 'reason')).rejects.toBeInstanceOf(NotFoundError)
+    expect(repository.calls).toEqual([])
+  })
+})

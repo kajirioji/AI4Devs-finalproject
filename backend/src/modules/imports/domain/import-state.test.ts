@@ -18,6 +18,7 @@ import {
   assertCanReview,
   assertCanValidate,
   EDITABLE_STATUSES,
+  UNDO_ATTEMPT_MOVE,
 } from './import-state.js'
 
 // The full transition table of the spec "Máquina de estados del import" (design D2): every action × every status.
@@ -104,5 +105,14 @@ describe('import state machine', () => {
 
   it('exposes the editable statuses for the file routes', () => {
     expect([...EDITABLE_STATUSES].sort()).toEqual(['mapped', 'uploaded'])
+  })
+})
+
+describe('UNDO_ATTEMPT_MOVE', () => {
+  it('takes a processed import back to analyzed, where it can be validated and cancelled again', () => {
+    expect(UNDO_ATTEMPT_MOVE).toEqual({ from: 'processed', to: 'analyzed' })
+    expect(() => assertCanValidate(UNDO_ATTEMPT_MOVE.to)).not.toThrow()
+    expect(() => assertCanCancel(UNDO_ATTEMPT_MOVE.to)).not.toThrow()
+    expect(() => assertCanValidate(UNDO_ATTEMPT_MOVE.from)).toThrow()
   })
 })

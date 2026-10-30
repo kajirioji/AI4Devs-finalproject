@@ -32,7 +32,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 - [ ] 4.1 Escribir los tests de `reopenForBatch` filtrado por corrida vigente y devolviendo ids (D5) y comprobar que fallan; ajustar `settlement-missing.int.test.ts`
 - [ ] 4.2 Escribir los tests de integración de `undo`: datos conservados, import, faltantes, `RAM-07`, auditoría, corrida superada, `lastInvalidatedReview`, `run = null`, `validation_run_required`, `settlement_not_current`, fallo a mitad y undo de un batch del seed; comprobar que fallan
 - [ ] 4.3 Escribir los tests de reproceso: `next` con `reprocess`, número tomado por otro import, intento 2 de punta a punta contra `expected.json`, intento 3 y `undone` que no cuenta en `previousE`
-- [ ] 4.4 Commit: test(settlement): deshacer un intento y reprocesar
+- [x] 4.4 Commit: test(settlement): deshacer un intento y reprocesar
 - [ ] 4.5 Implementar `undo` (D4, D6) y la reapertura (D5), añadir `settlement_undone` a la invalidación y a su esquema, y añadir `processed → analyzed` y su guarda a `import-state.ts`; verificar con los tests de 4.1–4.3
 - [ ] 4.6 Fijar con un test el riesgo aceptado: faltante cubierto también por otro batch vigente vuelve a `persistent` (design, Risks)
 - [ ] 4.7 Escribir los tests de concurrencia con compuertas: `pay` y `undo` en los dos órdenes, dos `undo`, `undo` y `unpay`, `undo` y `process` del mismo número; y `settlement_busy` tras tres 1205, sin dejar nada

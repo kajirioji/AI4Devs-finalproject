@@ -4,7 +4,11 @@ import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
-import { PrismaSettlementLifecycleRepository } from '../../src/modules/settlement/infrastructure/prisma-settlement-lifecycle-repository.js'
+import {
+  type LifecyclePhase,
+  PrismaSettlementLifecycleRepository,
+} from '../../src/modules/settlement/infrastructure/prisma-settlement-lifecycle-repository.js'
+import { PrismaSettlementRepository } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
 import { createTestApp } from './helpers.js'
 import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
@@ -29,7 +33,7 @@ beforeAll(async () => {
   // Approved transactions of RAM-01 (primary of ProviderA-USD) never settled: one per small import.
   ids = (
     await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
-      SELECT TOP 12 t.[sourceTransactionId] FROM [Transaction] t
+      SELECT TOP 16 t.[sourceTransactionId] FROM [Transaction] t
       WHERE t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2
         AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
       ORDER BY t.[transactionId] DESC`)
@@ -91,11 +95,12 @@ function gate() {
   }
 }
 
-const repository = (beforeClaim?: () => Promise<void>) =>
+const repository = (beforeClaim?: () => Promise<void>, beforePhase?: (phase: LifecyclePhase) => Promise<void>) =>
   new PrismaSettlementLifecycleRepository(ctx.prisma, {
     missing: new PrismaMissingResolution(),
     log: ctx.app.log,
     ...(beforeClaim ? { beforeClaim } : {}),
+    ...(beforePhase ? { beforePhase } : {}),
   })
 
 const command = (batchId: string, user: 'analyst' | 'payments' = 'payments') => ({
@@ -146,5 +151,226 @@ describe('two unpay of the same attempt', () => {
     await expect(waiting).rejects.toMatchObject({ code: 'settlement_not_paid', details: { status: 'processed' } })
     expect(await statusOf(batchId)).toBe('processed')
     expect(await auditCount(batchId, 'settlement.unpay')).toBe(1)
+  })
+})
+
+const REASON = 'Wrong settlement date'
+const undoCommand = (attempt: { batchId: string; importId: string }) => ({
+  batchId: attempt.batchId,
+  importId: attempt.importId,
+  userId: flow.userIds.analyst,
+  now: new Date(),
+  reason: REASON,
+})
+const importOf = (importId: string) =>
+  ctx.prisma.import.findUniqueOrThrow({ where: { importId }, select: { status: true, currentBatchId: true } })
+
+describe('pay and undo of the same attempt', () => {
+  it('undo waited while pay committed: settlement_payment_not_removed, and the import stays processed', async () => {
+    const attempt = await processedAttempt()
+    const g = gate()
+    const waiting = repository(g.beforeClaim).undo(undoCommand(attempt))
+    await g.reached
+
+    try {
+      await repository().pay(command(attempt.batchId))
+    } finally {
+      g.open()
+    }
+
+    await expect(waiting).rejects.toMatchObject({ code: 'settlement_payment_not_removed', details: { status: 'paid' } })
+    expect(await statusOf(attempt.batchId)).toBe('paid')
+    expect(await importOf(attempt.importId)).toEqual({ status: 'processed', currentBatchId: attempt.batchId })
+    expect(await auditCount(attempt.batchId, 'settlement.undo')).toBe(0)
+  })
+
+  it('pay waited while undo committed: settlement_not_processed { undone }', async () => {
+    const attempt = await processedAttempt()
+    const g = gate()
+    const waiting = repository(g.beforeClaim).pay(command(attempt.batchId))
+    await g.reached
+
+    try {
+      await repository().undo(undoCommand(attempt))
+    } finally {
+      g.open()
+    }
+
+    await expect(waiting).rejects.toMatchObject({ code: 'settlement_not_processed', details: { status: 'undone' } })
+    expect(await auditCount(attempt.batchId, 'settlement.pay')).toBe(0)
+  })
+})
+
+describe('two undo of the same attempt', () => {
+  it('the one that waited answers settlement_not_processed { undone }, with one audit row', async () => {
+    const attempt = await processedAttempt()
+    const g = gate()
+    const waiting = repository(g.beforeClaim).undo(undoCommand(attempt))
+    await g.reached
+
+    try {
+      await repository().undo(undoCommand(attempt))
+    } finally {
+      g.open()
+    }
+
+    await expect(waiting).rejects.toMatchObject({ code: 'settlement_not_processed', details: { status: 'undone' } })
+    expect(await auditCount(attempt.batchId, 'settlement.undo')).toBe(1)
+  })
+})
+
+describe('undo and unpay of the same attempt', () => {
+  it('undo waited while unpay committed: the attempt is processed again, so undo goes on', async () => {
+    const attempt = await processedAttempt()
+    await repository().pay(command(attempt.batchId))
+    const g = gate()
+    const waiting = repository(g.beforeClaim).undo(undoCommand(attempt))
+    await g.reached
+
+    try {
+      await repository().unpay({ ...command(attempt.batchId), reason: 'first' })
+    } finally {
+      g.open()
+    }
+
+    await expect(waiting).resolves.toBeUndefined()
+    expect(await statusOf(attempt.batchId)).toBe('undone')
+  })
+
+  it('unpay waited while undo committed: settlement_not_paid { undone }', async () => {
+    const attempt = await processedAttempt()
+    const g = gate()
+    const waiting = repository(g.beforeClaim).unpay({ ...command(attempt.batchId), reason: 'late' })
+    await g.reached
+
+    try {
+      await repository().undo(undoCommand(attempt))
+    } finally {
+      g.open()
+    }
+
+    await expect(waiting).rejects.toMatchObject({ code: 'settlement_not_paid', details: { status: 'undone' } })
+  })
+})
+
+describe('undo while another import takes the number', () => {
+  it('the process waits for the lock of the number and creates attempt 2, with no trace of the undo in it', async () => {
+    const attempt = await processedAttempt()
+    const id = ids[nextId++]!
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [id, { v: '10' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [{ name: `n-${id}.xlsx`, bytes }])
+    const runId = await flow.validateAndReview(detail.importId)
+
+    // The undo holds its locks right before its audit; the process gets to the lock of the number and waits there.
+    const undoHolds = gate()
+    const undoing = repository(undefined, async (phase) => {
+      if (phase === 'audit') await undoHolds.beforeClaim()
+    }).undo(undoCommand(attempt))
+    await undoHolds.reached
+    let reachedNumber!: () => void
+    const atNumber = new Promise<void>((resolve) => {
+      reachedNumber = resolve
+    })
+    const processRepository = new PrismaSettlementRepository(ctx.prisma, {
+      missing: new PrismaMissingResolution(),
+      beforePhase: async (phase) => {
+        if (phase === 'number') reachedNumber()
+      },
+    })
+    let processed: Promise<{ batchId: string }> | undefined
+    try {
+      processed = processRepository.process({
+        importId: detail.importId,
+        userId: flow.userIds.analyst,
+        request: { runId, batchNo: attempt.batchNo },
+        prefilledFeeTypeIds: new Set(),
+        now: new Date(),
+      })
+      await atNumber
+      // Still in its lock: the attempt of the undo has not been committed.
+      expect(await ctx.prisma.settlementBatch.count({ where: { importId: detail.importId } })).toBe(0)
+    } finally {
+      undoHolds.open()
+    }
+    await undoing
+    const { batchId } = await processed!
+
+    expect(await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId } })).toMatchObject({
+      batchNo: attempt.batchNo,
+      attemptNo: 2,
+      status: 'processed',
+      undoneAt: null,
+      undoReason: null,
+    })
+  })
+})
+
+describe('an undo that fails', () => {
+  const stateOf = async (attempt: { batchId: string; importId: string }) => ({
+    status: await statusOf(attempt.batchId),
+    import: await importOf(attempt.importId),
+    currentRuns: await ctx.prisma.validationRun.count({ where: { importId: attempt.importId, isSuperseded: false } }),
+    audit: await auditCount(attempt.batchId, 'settlement.undo'),
+  })
+
+  it('halfway leaves everything as it was', async () => {
+    const attempt = await processedAttempt()
+    const before = await stateOf(attempt)
+
+    await expect(
+      repository(undefined, async (phase) => {
+        if (phase === 'run') throw new Error('failed after reopening the findings')
+      }).undo(undoCommand(attempt)),
+    ).rejects.toThrow('failed after reopening the findings')
+
+    expect(await stateOf(attempt)).toEqual(before)
+    expect(before).toMatchObject({ status: 'processed', currentRuns: 1, audit: 0 })
+  })
+
+  it('answers settlement_busy after three deadlocks, leaving nothing', async () => {
+    const attempt = await processedAttempt()
+    const before = await stateOf(attempt)
+    let tries = 0
+    const victim = new Prisma.PrismaClientKnownRequestError('deadlock', {
+      code: 'P2010',
+      clientVersion: 'test',
+      meta: { driverAdapterError: { cause: { kind: 'TransactionWriteConflict' } } },
+    })
+
+    await expect(
+      repository(undefined, async (phase) => {
+        if (phase === 'missing') {
+          tries += 1
+          throw victim
+        }
+      }).undo(undoCommand(attempt)),
+    ).rejects.toMatchObject({ code: 'settlement_busy' })
+
+    expect(tries).toBe(3)
+    expect(await stateOf(attempt)).toEqual(before)
+  })
+
+  it('of a processed attempt that is not the current one answers settlement_not_current, writing nothing', async () => {
+    const attempt = await processedAttempt()
+    await ctx.prisma.import.update({ where: { importId: attempt.importId }, data: { currentBatchId: null } })
+
+    await expect(repository().undo(undoCommand(attempt))).rejects.toMatchObject({
+      code: 'settlement_not_current',
+      details: { importStatus: 'processed', currentBatchId: null },
+    })
+
+    expect(await statusOf(attempt.batchId)).toBe('processed')
+    expect(await auditCount(attempt.batchId, 'settlement.undo')).toBe(0)
+    await ctx.prisma.import.update({ where: { importId: attempt.importId }, data: { currentBatchId: attempt.batchId } })
   })
 })
