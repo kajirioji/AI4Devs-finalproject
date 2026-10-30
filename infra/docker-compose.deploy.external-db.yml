@@ -1,0 +1,21 @@
+# External SQL Server: the mssql service never starts, and whatever connects to the database
+# needs the egress network to leave the Docker host. Requires Docker Compose 2.24 or later.
+services:
+  mssql:
+    profiles: [disabled]
+
+  api:
+    depends_on: !reset {}
+    networks:
+      - recon-internal
+      - recon-egress
+
+  migrate:
+    depends_on: !reset {}
+    networks:
+      - recon-egress
+
+  seed:
+    depends_on: !reset {}
+    networks:
+      - recon-egress

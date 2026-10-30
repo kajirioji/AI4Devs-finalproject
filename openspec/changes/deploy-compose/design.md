@@ -84,6 +84,8 @@ El compose base funciona tal cual, con `mssql` incluido, y el archivo de overrid
 
 `infra/mssql/init.deploy.sql`, idempotente y montado solo en el compose de despliegue, crea el login con `db_ddladmin`, `db_datareader` y `db_datawriter`, y saca a `recon_app` de `db_ddladmin`. `entrypoint.sh` lo ejecuta si el archivo existe, de modo que local no cambia. Con base externa, ese mismo script se entrega a quien administre el servidor.
 
+`init.sql` solo da `db_ddladmin` a `recon_app` mientras no exista `recon_migrator`, para que un reinicio no le devuelva el permiso. Con datos, SQL Server responde a `SELECT 1` antes de poder abrir las bases (`Msg 904`), así que `entrypoint.sh` reintenta los scripts durante unos dos minutos y, si no terminan, sale con error en lugar de seguir sin inicializar.
+
 El seed usa también esta identidad, por `DBCC CHECKIDENT` (proposal, hallazgo 6). Si `db_ddladmin` no bastara para alguna migración, se detecta en la tarea 3.5 y se amplía allí, documentando el motivo.
 
 El healthcheck de `mssql` en el despliegue comprueba que exista `recon_migrator`, el último objeto creado. Un `SELECT 1` pasaría antes de que terminara `init.sql`, y la API arrancaría sin base ni usuario.

@@ -15,20 +15,21 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 - [x] 2.1 Crear `frontend/nginx/default.conf` y el fragmento de cabeceras `frontend/nginx/security-headers.conf` (design D3). Verificar con `nginx -t` dentro de la imagen
 - [x] 2.2 Crear `frontend/Dockerfile` multi-stage, sin `VITE_API_URL`. Verificar: `docker build -f frontend/Dockerfile .` termina bien y el proceso no es root
-- [ ] 2.3 Verificar: una ruta profunda de la SPA da `200` con `index.html`; `assets/` lleva caché inmutable; las cuatro cabeceras aparecen en `index.html`, en `assets/` y en `/api/`
+- [x] 2.3 Verificar: una ruta profunda de la SPA da `200` con `index.html`; `assets/` lleva caché inmutable; las cuatro cabeceras aparecen en `index.html`, en `assets/` y en `/api/`
 - [x] 2.4 Commit: `feat(infra): imagen Docker de la web con Nginx`
 
 ## 3. Compose de despliegue y base de datos
 
-- [ ] 3.1 Crear `infra/.env.deploy.example` con todas las variables, sin secretos y con `TUNNEL_TOKEN` vacío, y contrastarla con `.env.example` (design, Open Questions). Añadir `!.env.deploy.example` a `.gitignore`. Verificar: `git check-ignore` no ignora la plantilla y sí `infra/.env.deploy`
-- [ ] 3.2 Crear `infra/mssql/init.deploy.sql` (idempotente) y hacer que `entrypoint.sh` lo ejecute si está montado (design D7). Verificar: `pnpm db:up` en local sigue dejando a `recon_app` con `db_ddladmin`
-- [ ] 3.3 Crear `infra/docker-compose.deploy.yml`: `web`, `api`, `mssql`, `cloudflared`, `migrate`, `seed`, redes, volúmenes de base y de subidas, `environment` por servicio y healthchecks, incluido el de `cloudflared` con `tunnel ready` (design D4, D7, D8). Verificar: `docker compose config` sin puertos publicados y sin la contraseña de `sa` ni el token en `api`
-- [ ] 3.4 Crear los overrides `docker-compose.deploy.debug.yml` y `docker-compose.deploy.external-db.yml` (design D6). Verificar: `docker compose config` de cada combinación muestra lo esperado, y en el modo externo `mssql` no se arranca
-- [ ] 3.5 Levantar en modo de depuración con Docker Desktop. La persona ejecuta `! docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml run --rm migrate`. Verificar: la migración termina con `recon_migrator`, `recon_app` no puede hacer `CREATE TABLE`, y `web` y `api` quedan `healthy`
-- [ ] 3.6 Verificar el aislamiento: desde `api`, `web` y `mssql` una conexión a internet falla; `127.0.0.1:8080` responde en el host
-- [ ] 3.7 Verificar el modo externo usando un segundo contenedor SQL Server como "externo": la API responde `200` en el health sin el servicio `mssql` del compose
-- [ ] 3.8 Ejecutar gitleaks sobre el repositorio con la plantilla incluida. Verificar: cero hallazgos
-- [ ] 3.9 Commit: `feat(infra): compose de despliegue con túnel, red interna e identidad de migración`
+- [x] 3.1 Crear `infra/.env.deploy.example` con todas las variables, sin secretos y con `TUNNEL_TOKEN` vacío, y contrastarla con `.env.example` (design, Open Questions). Añadir `!.env.deploy.example` a `.gitignore`. Verificar: `git check-ignore` no ignora la plantilla y sí `infra/.env.deploy`
+- [x] 3.2 Crear `infra/mssql/init.deploy.sql` (idempotente) y hacer que `entrypoint.sh` lo ejecute si está montado (design D7). Verificar: `pnpm db:up` en local sigue dejando a `recon_app` con `db_ddladmin`
+- [x] 3.3 Crear `infra/docker-compose.deploy.yml`: `web`, `api`, `mssql`, `cloudflared`, `migrate`, `seed`, redes, volúmenes de base y de subidas, `environment` por servicio y healthchecks, incluido el de `cloudflared` con `tunnel ready` (design D4, D7, D8). Verificar: `docker compose config` sin puertos publicados y sin la contraseña de `sa` ni el token en `api`
+- [x] 3.4 Crear los overrides `docker-compose.deploy.debug.yml` y `docker-compose.deploy.external-db.yml` (design D6). Verificar: `docker compose config` de cada combinación muestra lo esperado, y en el modo externo `mssql` no se arranca
+- [x] 3.5 Levantar en modo de depuración con Docker Desktop. La persona ejecuta `! docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml run --rm migrate`. Verificar: la migración termina con `recon_migrator`, `recon_app` no puede hacer `CREATE TABLE`, y `web` y `api` quedan `healthy`
+- [x] 3.6 Verificar el aislamiento sin el override de depuración (con él, `web` tiene salida para publicar su puerto): desde `api`, `web` y `mssql` una conexión a internet falla. Con el override, `127.0.0.1:8080` responde en el host
+- [x] 3.7 Verificar el modo externo usando un segundo contenedor SQL Server como "externo": la API responde `200` en el health sin el servicio `mssql` del compose
+- [x] 3.8 Ejecutar gitleaks sobre el repositorio con la plantilla incluida. Verificar: cero hallazgos
+- [x] 3.9 Verificar el reinicio sobre un volumen con datos: `down` y `up` arrancan a la primera aunque SQL Server tarde en abrir las bases (`Msg 904`), se conservan los datos y `recon_app` no recupera `db_ddladmin`. Un fallo real de inicialización termina el contenedor con error
+- [x] 3.10 Commit: `feat(infra): compose de despliegue con túnel, red interna e identidad de migración`
 
 ## 4. Operación con `scripts/deploy.sh`
 

@@ -20,7 +20,11 @@ GO
 -- Read, write and DDL (for prisma migrate); no db_owner.
 ALTER ROLE [db_datareader] ADD MEMBER [recon_app];
 ALTER ROLE [db_datawriter] ADD MEMBER [recon_app];
-ALTER ROLE [db_ddladmin] ADD MEMBER [recon_app];
+-- A deployment moves DDL to recon_migrator (init.deploy.sql): restarts must not give it back.
+IF DATABASE_PRINCIPAL_ID('recon_migrator') IS NULL
+BEGIN
+    ALTER ROLE [db_ddladmin] ADD MEMBER [recon_app];
+END;
 GO
 -- Read-only user for agents and query tools (DB MCP in --readonly).
 IF NOT EXISTS (SELECT 1 FROM sys.sql_logins WHERE name = 'recon_reader')
