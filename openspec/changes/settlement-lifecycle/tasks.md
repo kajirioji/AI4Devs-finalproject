@@ -8,9 +8,9 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 - [x] 1.1 Escribir `domain/batch-lifecycle.test.ts` con las nueve combinaciones de acción y estado (spec "Tabla de transiciones") y comprobar que falla por no existir el módulo
 - [x] 1.2 Commit: test(settlement): tabla de transiciones del intento
-- [ ] 1.3 Implementar `transitionOf` (D2) y dejar el test en verde; rotura deliberada: permitir `undo` desde `paid` hace fallar su fila, y se revierte
-- [ ] 1.4 Quitar la copia de `settledStatusOf` de `prisma-settlement-reader.ts` e importar la de `domain/settled.ts`; verificar con `pnpm --filter @recon/backend test`
-- [ ] 1.5 Commit: feat(settlement): transiciones del intento como función pura
+- [x] 1.3 Implementar `transitionOf` (D2) y dejar el test en verde; rotura deliberada: permitir `undo` desde `paid` hace fallar su fila, y se revierte
+- [x] 1.4 Quitar la copia de `settledStatusOf` de `prisma-settlement-reader.ts` e importar la de `domain/settled.ts`; verificar con `pnpm --filter @recon/backend test`
+- [x] 1.5 Commit: feat(settlement): transiciones del intento como función pura
 
 ## 2. Contrato compartido y errores
 
