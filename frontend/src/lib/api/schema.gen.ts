@@ -4909,6 +4909,19 @@ export interface paths {
                             /** Format: date-time */
                             processedAt: string;
                             settlementDate: string | null;
+                            /** Format: date-time */
+                            paidAt: string | null;
+                            paidBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            /** Format: date-time */
+                            undoneAt: string | null;
+                            undoneBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            undoReason: string | null;
                             channelsAssigned: {
                                 channelId: number;
                                 name: string;
@@ -5401,6 +5414,19 @@ export interface paths {
                             /** Format: date-time */
                             processedAt: string;
                             settlementDate: string | null;
+                            /** Format: date-time */
+                            paidAt: string | null;
+                            paidBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            /** Format: date-time */
+                            undoneAt: string | null;
+                            undoneBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            undoReason: string | null;
                             channelsAssigned: {
                                 channelId: number;
                                 name: string;

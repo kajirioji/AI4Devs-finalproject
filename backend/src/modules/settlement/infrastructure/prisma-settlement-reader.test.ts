@@ -24,6 +24,11 @@ function stubPrisma(amountPayable: string, audit: { detailJson: string } | null 
         status: 'paid',
         processedAt: new Date('2026-01-10T12:00:00.000Z'),
         settlementDate: null,
+        paidAt: new Date('2026-01-11T09:30:00.000Z'),
+        paidBy: { userId: 3, userName: 'payments' },
+        undoneAt: null,
+        undoneBy: null,
+        undoReason: null,
         dateMinApp: null,
         dateMaxApp: null,
         dateMinDec: null,
@@ -88,6 +93,20 @@ describe('PrismaSettlementReader', () => {
     expect(SettlementView.parse(view)).toMatchObject({ validationSummary: null, warnings: [], channelsAssigned: [] })
     expect(groupBy).toHaveBeenCalledTimes(1)
     expect(groupBy.mock.calls[0]?.[0].by).toEqual(['cycle'])
+  })
+
+  it('carries who paid and when, and leaves the undo fields empty', async () => {
+    const view = await new PrismaSettlementReader(stubPrisma('870.0000').prisma).view(BATCH_ID)
+
+    expect(SettlementView.parse(view)).toMatchObject({
+      status: 'paid',
+      settledStatus: 'settled',
+      paidAt: '2026-01-11T09:30:00.000Z',
+      paidBy: { userId: 3, userName: 'payments' },
+      undoneAt: null,
+      undoneBy: null,
+      undoReason: null,
+    })
   })
 
   it('takes the run of the process audit for the validation summary', async () => {

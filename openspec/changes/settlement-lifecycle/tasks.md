@@ -14,10 +14,10 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 ## 2. Contrato compartido y errores
 
-- [ ] 2.1 En `packages/shared/src/settlement.ts`, añadir `ReasonRequest` y los campos de pago y de deshacer de `SettlementView`, con tests de forma (motivo vacío, de solo espacios y de 501 caracteres rechazados)
+- [x] 2.1 En `packages/shared/src/settlement.ts`, añadir `ReasonRequest` y los campos de pago y de deshacer de `SettlementView`, con tests de forma (motivo vacío, de solo espacios y de 501 caracteres rechazados)
 - [ ] 2.2 Añadir a `application/errors.ts` los cuatro `409` de D7; el lector rellena los campos nuevos, y los tests "Batch del seed" (con `paidBy`) e "Intento deshecho" pasan
-- [ ] 2.3 Extraer `isDeadlockVictim` y el reintento a `infrastructure/deadlock-retry.ts`, sin cambio de comportamiento; verificar con los tests existentes de `settlement_busy`
-- [ ] 2.4 Commit: feat(settlement): contrato y errores del ciclo de vida del intento
+- [x] 2.3 Extraer `isDeadlockVictim` y el reintento a `infrastructure/deadlock-retry.ts`, sin cambio de comportamiento; verificar con los tests existentes de `settlement_busy`
+- [x] 2.4 Commit: feat(settlement): contrato y errores del ciclo de vida del intento
 
 ## 3. Pagar y retirar el pago
 

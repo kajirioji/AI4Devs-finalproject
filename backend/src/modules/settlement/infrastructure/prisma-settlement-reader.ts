@@ -51,6 +51,8 @@ export class PrismaSettlementReader {
       include: {
         account: { select: { name: true } },
         approvedBy: { select: { userId: true, userName: true } },
+        paidBy: { select: { userId: true, userName: true } },
+        undoneBy: { select: { userId: true, userName: true } },
         totals: true,
         brandTotals: true,
         fees: {
@@ -141,6 +143,11 @@ export class PrismaSettlementReader {
       approvedBy: batch.approvedBy,
       processedAt: batch.processedAt.toISOString(),
       settlementDate: day(batch.settlementDate),
+      paidAt: batch.paidAt?.toISOString() ?? null,
+      paidBy: batch.paidBy,
+      undoneAt: batch.undoneAt?.toISOString() ?? null,
+      undoneBy: batch.undoneBy,
+      undoReason: batch.undoReason,
       dateRanges: {
         APP: range(batch.dateMinApp, batch.dateMaxApp),
         DEC: range(batch.dateMinDec, batch.dateMaxDec),

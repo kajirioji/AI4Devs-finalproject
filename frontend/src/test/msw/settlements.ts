@@ -431,6 +431,11 @@ function createAttempt(
     approvedBy: userRef(by),
     processedAt: auditInstant(now()),
     settlementDate: body.settlementDate ? businessDate(body.settlementDate) : null,
+    paidAt: null,
+    paidBy: null,
+    undoneAt: null,
+    undoneBy: null,
+    undoReason: null,
     channelsAssigned: fixture.channelsToAssign.map((c) => ({
       channelId: c.channelId,
       name: c.name,
