@@ -20,6 +20,7 @@ import type { CatalogService } from '../modules/catalog/application/catalog-serv
 import type { FeeReadService } from '../modules/fees/application/fee-read-service.js'
 import type { ImportService } from '../modules/imports/application/import-service.js'
 import type { FileStore } from '../modules/imports/application/ports.js'
+import type { SettlementLifecycleService } from '../modules/settlement/application/settlement-lifecycle-service.js'
 import type { SettlementReadService } from '../modules/settlement/application/settlement-read-service.js'
 import type { SettlementService } from '../modules/settlement/application/settlement-service.js'
 import type { ValidationService } from '../modules/validation/application/validation-service.js'
@@ -37,7 +38,7 @@ export interface TestAppOptions {
   /** Fee read service over an in-memory repository; without it the fee routes hit the fake Prisma client. */
   fees?: { service: FeeReadService }
   /** Settlement services over in-memory doubles; without them the settlement routes hit the fake Prisma client. */
-  settlement?: { service: SettlementService; reads?: SettlementReadService }
+  settlement?: { service: SettlementService; reads?: SettlementReadService; lifecycle?: SettlementLifecycleService }
 }
 
 export async function buildTestApp(options: TestAppOptions = {}) {

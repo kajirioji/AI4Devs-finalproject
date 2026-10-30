@@ -152,10 +152,10 @@ describe('POST /settlements/{id}/unpay', () => {
     expect(repository.calls).toEqual([])
   })
 
-  it.each(['viewer', 'analyst'])('answers 403 to %s before looking at the body', async (user) => {
+  it.each(['viewer', 'analyst'])('answers 403 to %s, even for an attempt that does not exist', async (user) => {
     await app('paid')
     expect((await post(`${EXAMPLE_BATCH_ID}/unpay`, user, REASON)).statusCode).toBe(403)
-    expect((await post(`${EXAMPLE_BATCH_ID}/unpay`, user, {})).statusCode).toBe(403)
+    expect((await post(`${UNKNOWN}/unpay`, user, REASON)).statusCode).toBe(403)
   })
 
   it('answers 409 settlement_not_paid with the current status', async () => {
