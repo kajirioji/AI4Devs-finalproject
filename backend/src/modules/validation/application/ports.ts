@@ -206,6 +206,6 @@ export interface StoredIssueDetail {
 export interface MissingResolution {
   /** Persistent missing findings of the provider whose (transactionId, cycle) is in the batch → resolved with it. */
   resolveForBatch(tx: Prisma.TransactionClient, batchId: string, at: Date): Promise<number>
-  /** Findings resolved by this batch → persistent again, resolvedInBatchId/resolvedAt cleared. */
-  reopenForBatch(tx: Prisma.TransactionClient, batchId: string): Promise<number>
+  /** Findings of current runs resolved by this batch → persistent again, resolvedInBatchId/resolvedAt cleared; their ids. */
+  reopenForBatch(tx: Prisma.TransactionClient, batchId: string): Promise<number[]>
 }

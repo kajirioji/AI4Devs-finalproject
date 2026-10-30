@@ -20,6 +20,7 @@ import type {
 
 export const BATCH_HEADER: BatchHeader = {
   batchId: '5c3f9e21-8a4b-4f0e-b1d2-6e7f8a9b0c1d',
+  importId: '7b0c2a52-3f8e-4d0a-9a61-0d8f3b1e2c44',
   accountId: 'a0000000-0000-4000-8000-000000000001',
   accountName: 'ProviderA-USD',
   batchNo: 123,

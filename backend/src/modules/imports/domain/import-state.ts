@@ -58,6 +58,12 @@ export function assertCanProcess(status: ImportStatus): void {
   if (status !== 'validated') throw new ImportNotValidatedError(status)
 }
 
+/** `POST /settlements/{id}/undo` of the current attempt: the import can be validated and cancelled again. */
+export const UNDO_ATTEMPT_MOVE = { from: 'processed', to: 'analyzed' } as const satisfies {
+  from: ImportStatus
+  to: ImportStatus
+}
+
 /** `POST /imports/{id}/cancel`: anything but `processed` and `cancelled`. */
 export function assertCanCancel(status: ImportStatus): void {
   if (!CANCELLABLE_STATUSES.has(status)) throw new ImportNotCancellableError(status)

@@ -52,6 +52,7 @@ import {
   type StoredBreakdown,
 } from '../application/run-record.js'
 import type { Issue, ValidationReport } from '../domain/types.js'
+import { INVALIDATE, REVIEW, recordInvalidation } from './review-events.js'
 
 type Tx = Prisma.TransactionClient
 
@@ -61,8 +62,6 @@ const CURRENT_RUN_INDEX = 'UX_ValidationRun_current_import'
 const RUN_TX_TIMEOUT_MS = 60_000
 const RUN_TX_MAX_WAIT_MS = 10_000
 
-const REVIEW = 'import.review'
-const INVALIDATE = 'import.review.invalidate'
 const SET_INCLUSION = 'validation.occurrence.set_inclusion'
 const RESOLVE = 'validation.issue.resolve'
 /** Only these findings are resolved by hand (P5). */
@@ -193,7 +192,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           })
           if (previousStatus === 'validated') {
             await tx.import.update({ where: { importId: run.importId }, data: { status: 'analyzed' } })
-            await this.recordInvalidation(tx, run.importId, run.runId, userId, now, {
+            await recordInvalidation(tx, run.importId, run.runId, userId, now, {
               reason: 'inclusion_change',
               occurrenceId,
             })
@@ -390,7 +389,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           lap('runMs')
           await this.writeResults(tx, runId, report, now, lap)
           if (previousStatus === 'validated' && previous) {
-            await this.recordInvalidation(tx, importId, previous.runId, userId, now, {
+            await recordInvalidation(tx, importId, previous.runId, userId, now, {
               reason: 'rerun',
               newRunId: runId,
             })
@@ -554,39 +553,6 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     const out: T[][] = []
     for (let offset = 0; offset < items.length; offset += size) out.push(items.slice(offset, offset + size))
     return out
-  }
-
-  /** AuditLog `import.review.invalidate` with the reviewer of the last review of that run copied (D16). */
-  private async recordInvalidation(
-    tx: Tx,
-    importId: string,
-    runId: number,
-    userId: number,
-    now: Date,
-    extra: { reason: InvalidationReason; newRunId?: number; occurrenceId?: string },
-  ): Promise<void> {
-    // The reviews of an import are a handful: filtering by runId here avoids depending on the JSON text.
-    const reviews = await tx.auditLog.findMany({
-      where: { entityType: 'Import', entityId: importId, action: REVIEW },
-      orderBy: [{ createdAt: 'desc' }, { auditId: 'desc' }],
-      select: { userId: true, createdAt: true, detailJson: true },
-    })
-    const review = reviews.find((r) => JSON.parse(r.detailJson ?? '{}').runId === runId)
-    await tx.auditLog.create({
-      data: {
-        userId,
-        action: INVALIDATE,
-        entityType: 'Import',
-        entityId: importId,
-        createdAt: now,
-        detailJson: JSON.stringify({
-          runId,
-          reviewedByUserId: review?.userId ?? null,
-          reviewedAt: review?.createdAt.toISOString() ?? null,
-          ...extra,
-        }),
-      },
-    })
   }
 
   async currentRun(importId: string): Promise<StoredRun | null> {

@@ -6,6 +6,7 @@ import type { ChannelAssigned } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
+import { reviewIsValid } from '../../validation/infrastructure/review-events.js'
 import {
   BatchFeeInvalidError,
   BatchNoTakenError,
@@ -133,7 +134,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
           if (run.runId !== request.runId) throw new ValidationRunSupersededError(request.runId, run.runId)
           if (run.blocked)
             throw new BlockingValidationIssueError(run.runId, run.blocked.validationCodes, run.blocked.issueIds)
-          if (!(await this.reviewIsValid(tx, importId, run.runId)))
+          if (!(await reviewIsValid(tx, importId, run.runId)))
             throw new ValidationRunSupersededError(request.runId, run.runId)
 
           const input = await loadSettlementInput(source, {
@@ -285,17 +286,6 @@ export class PrismaSettlementRepository implements SettlementRepository {
     if (claimed.length === 1) return
     const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
     throw new ImportNotValidatedError(current?.status ?? 'unknown')
-  }
-
-  /** The last review event of the run is a review, not an invalidation (validation-runs D7, D16). */
-  private async reviewIsValid(tx: Tx, importId: string, runId: number): Promise<boolean> {
-    const [last] = await tx.$queryRaw<{ action: string }[]>`
-      SELECT TOP 1 [action] FROM [AuditLog]
-      WHERE [entityType] = 'Import' AND [entityId] = ${importId}
-        AND [action] IN ('import.review', 'import.review.invalidate')
-        AND JSON_VALUE([detailJson], '$.runId') = ${String(runId)}
-      ORDER BY [createdAt] DESC, [auditId] DESC`
-    return last?.action === 'import.review'
   }
 
   /**

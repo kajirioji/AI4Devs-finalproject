@@ -36,7 +36,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 - [ ] 4.5 Implementar `undo` (D4, D6) y la reapertura (D5), añadir `settlement_undone` a la invalidación y a su esquema, y añadir `processed → analyzed` y su guarda a `import-state.ts`; verificar con los tests de 4.1–4.3
 - [ ] 4.6 Fijar con un test el riesgo aceptado: faltante cubierto también por otro batch vigente vuelve a `persistent` (design, Risks)
 - [ ] 4.7 Escribir los tests de concurrencia con compuertas: `pay` y `undo` en los dos órdenes, dos `undo`, `undo` y `unpay`, `undo` y `process` del mismo número; y `settlement_busy` tras tres 1205, sin dejar nada
-- [ ] 4.8 Commit: feat(settlement): deshacer un intento y reprocesar con el mismo número
+- [x] 4.8 Commit: feat(settlement): deshacer un intento y reprocesar con el mismo número
 
 ## 5. OpenAPI, cliente y colección Bruno
 

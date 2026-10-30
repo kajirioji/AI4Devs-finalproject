@@ -17,6 +17,7 @@ import type {
   SettlementReader,
   SettlementRepository,
   SettlementSource,
+  UndoCommand,
 } from '../ports.js'
 
 type SettlementLifecycleCall = { action: LifecycleAction } & LifecycleCommand & { reason?: string; importId?: string }
@@ -119,6 +120,10 @@ export class InMemorySettlementLifecycleRepository implements SettlementLifecycl
 
   async unpay(command: ReasonCommand): Promise<void> {
     this.record({ action: 'unpay', ...command })
+  }
+
+  async undo(command: UndoCommand): Promise<void> {
+    this.record({ action: 'undo', ...command })
   }
 }
 

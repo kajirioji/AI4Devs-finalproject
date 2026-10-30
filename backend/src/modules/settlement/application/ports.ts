@@ -83,10 +83,15 @@ export interface ReasonCommand extends LifecycleCommand {
   reason: string
 }
 
+export interface UndoCommand extends ReasonCommand {
+  importId: string
+}
+
 /** The actions on an attempt, each in one transaction with its guard (settlement-lifecycle design D3, D4). */
 export interface SettlementLifecycleRepository {
   pay(command: LifecycleCommand): Promise<void>
   unpay(command: ReasonCommand): Promise<void>
+  undo(command: UndoCommand): Promise<void>
 }
 
 /** The view of an attempt read back from what was written (design D19). */

@@ -43,6 +43,20 @@ export class SettlementLifecycleService {
     return this.readView(scope, header.batchId)
   }
 
+  /** The import comes from the header, read after the scope: it never changes (design D4). */
+  async undo(scope: Scope, userId: number, batchId: string, reason: string): Promise<SettlementView> {
+    const header = await this.header(scope, batchId)
+    assertTransition(header.status, 'undo')
+    await this.deps.repository.undo({
+      batchId: header.batchId,
+      importId: header.importId,
+      userId,
+      now: this.clock(),
+      reason,
+    })
+    return this.readView(scope, header.batchId)
+  }
+
   private async header(scope: Scope, batchId: string): Promise<BatchHeader> {
     const header = await this.deps.queries.batchHeader(scope, batchId)
     if (header === null) throw new NotFoundError('Settlement')

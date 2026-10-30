@@ -51,4 +51,25 @@ export const settlementLifecycleRoutes: FastifyPluginAsyncZod<SettlementLifecycl
     async (request) =>
       service.unpay(scopeOf(request.auth), request.auth.userId, request.params.batchId, request.body.reason),
   )
+
+  app.post(
+    '/settlements/:batchId/undo',
+    {
+      preHandler: app.requirePermission('settlement.process'),
+      schema: {
+        ...settlements,
+        summary: 'Undo a processed attempt, with a reason, keeping its data; its import goes back to analyzed',
+        description:
+          'Supersedes the current validation run of the import and reopens the missing findings the attempt resolved; ' +
+          'the primary account of the channels does not change. 400 validation_error without a reason. ' +
+          '409 settlement_payment_not_removed from paid; settlement_not_processed from undone (details.status); ' +
+          'settlement_not_current when it is not the current attempt of its import; settlement_busy.',
+        params: BatchParams,
+        body: ReasonRequest,
+        response: { 200: SettlementView, ...errors },
+      },
+    },
+    async (request) =>
+      service.undo(scopeOf(request.auth), request.auth.userId, request.params.batchId, request.body.reason),
+  )
 }

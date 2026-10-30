@@ -46,7 +46,7 @@ const nonNegativeInt = z.number().int().nonnegative()
 export const ResolutionStatus = z.enum(['persistent', 'resolved'])
 export type ResolutionStatus = z.infer<typeof ResolutionStatus>
 
-export const InvalidationReason = z.enum(['rerun', 'inclusion_change'])
+export const InvalidationReason = z.enum(['rerun', 'inclusion_change', 'settlement_undone'])
 export type InvalidationReason = z.infer<typeof InvalidationReason>
 
 export const StatusRef = z.object({
