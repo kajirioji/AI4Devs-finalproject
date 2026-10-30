@@ -1,0 +1,22 @@
+# Build context of backend/Dockerfile and frontend/Dockerfile (both use the repository root).
+# Secrets never enter an image; generated output is rebuilt inside it.
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/coverage
+**/src/generated
+.git
+.github
+.claude
+.husky
+api-collection
+docs
+openspec
+data/uploads
+backend/data/uploads
+e2e/test-results
+e2e/playwright-report
+e2e/.features-gen
+reports
+**/*.log

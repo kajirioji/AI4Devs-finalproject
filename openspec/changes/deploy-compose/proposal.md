@@ -48,7 +48,7 @@ Ninguna: no cambia el comportamiento del API ni de la interfaz.
 
 ## Impact
 
-- **Archivos nuevos:** `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `.dockerignore`, `infra/docker-compose.deploy*.yml`, `infra/mssql/init.deploy.sql`, `infra/.env.deploy.example`, `scripts/deploy.sh`, `docs/deploy.md`.
+- **Archivos nuevos:** `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx/*`, `.dockerignore`, `infra/docker-compose.deploy*.yml`, `infra/mssql/init.deploy.sql`, `infra/.env.deploy.example`, `scripts/deploy.sh`, `docs/deploy.md`.
 - **Archivos modificados:** `packages/shared/package.json`, `backend/package.json` (`start`), `infra/mssql/entrypoint.sh` (ejecuta `init.deploy.sql` solo si está montado), `.gitignore`, `.github/workflows/ci.yml`, `readme.md`, `CLAUDE.md` (comandos), `prompts.md`.
 - **Dependencias nuevas de ejecución:** imágenes `node:22-slim`, `nginxinc/nginx-unprivileged` y `cloudflare/cloudflared`. Ningún paquete npm nuevo.
 - **Sin cambios:** API, contrato OpenAPI y colección Bruno.
