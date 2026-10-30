@@ -1,0 +1,32 @@
+meta {
+  name: 20 Undo paid
+  type: http
+  seq: 21
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+body:json {
+  {
+    "reason": "Wrong settlement date"
+  }
+}
+
+tests {
+  test('a paid attempt is not undone: 409 settlement_payment_not_removed', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('settlement_payment_not_removed');
+    expect(res.body.details.status).to.equal('paid');
+  });
+}

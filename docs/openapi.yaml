@@ -7291,6 +7291,7 @@ paths:
                         enum:
                           - rerun
                           - inclusion_change
+                          - settlement_undone
                       newRunId:
                         nullable: true
                         type: integer
@@ -7683,6 +7684,7 @@ paths:
                         enum:
                           - rerun
                           - inclusion_change
+                          - settlement_undone
                       newRunId:
                         nullable: true
                         type: integer
@@ -9523,6 +9525,7 @@ paths:
                         enum:
                           - rerun
                           - inclusion_change
+                          - settlement_undone
                       newRunId:
                         nullable: true
                         type: integer
@@ -13502,6 +13505,2313 @@ paths:
                   - message
                 additionalProperties: false
         "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/settlements/{batchId}/pay:
+    post:
+      summary: "Mark a processed attempt as paid: its movements become Settled"
+      tags: &a13
+        - settlements
+      description: Without a body. 409 settlement_not_processed from paid or undone
+        (details.status); settlement_busy.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: batchId
+          required: true
+      security: &a14
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dateRanges:
+                    type: object
+                    properties:
+                      APP:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      DEC:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      I:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      R:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                    required:
+                      - APP
+                      - DEC
+                      - I
+                      - R
+                    additionalProperties: false
+                  channels:
+                    type: array
+                    items:
+                      type: string
+                  movements:
+                    type: object
+                    properties:
+                      E:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      I:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      R:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - E
+                      - I
+                      - R
+                    additionalProperties: false
+                  totals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          enum:
+                            - deposit
+                            - declined
+                            - chargeback
+                            - refund
+                            - rdr
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeAmount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeRate:
+                          nullable: true
+                          type: string
+                          pattern: ^(0\.\d{6}|1\.0{6})$
+                      required:
+                        - category
+                        - qty
+                        - amount
+                        - feeAmount
+                        - feeRate
+                      additionalProperties: false
+                  brandTotals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cardBrand:
+                          type: string
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - cardBrand
+                        - qty
+                        - amount
+                      additionalProperties: false
+                  reservesReleasedQty:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  mdrAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  mdrRate:
+                    nullable: true
+                    type: string
+                    pattern: ^(0\.\d{6}|1\.0{6})$
+                  transactionalFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  batchFees:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        batchFeeId:
+                          nullable: true
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        feeTypeId:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        code:
+                          type: string
+                        title:
+                          type: string
+                        feeId:
+                          nullable: true
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        description:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                            - manual
+                        enteredBy:
+                          nullable: true
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                      required:
+                        - batchFeeId
+                        - feeTypeId
+                        - code
+                        - title
+                        - feeId
+                        - amount
+                        - description
+                        - source
+                        - enteredBy
+                      additionalProperties: false
+                  otherFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveHeldAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveEarlyReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  amountPayable:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  payableBreakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          enum:
+                            - deposit
+                            - chargeback
+                            - refund
+                            - rdr
+                            - transactional_fees
+                            - batch_fees
+                            - reserve_held
+                            - reserve_released
+                            - reserve_early_released
+                        label:
+                          type: string
+                        sign:
+                          type: string
+                          enum:
+                            - +
+                            - "-"
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - code
+                        - label
+                        - sign
+                        - amount
+                      additionalProperties: false
+                  skipped:
+                    type: object
+                    properties:
+                      ignored:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unmatched:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      ambiguous:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      excluded:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unresolvedStatus:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      pending:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - ignored
+                      - unmatched
+                      - ambiguous
+                      - excluded
+                      - unresolvedStatus
+                      - pending
+                    additionalProperties: false
+                  warnings:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - undated_adjustment
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                            feeSkipped:
+                              type: boolean
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                            - feeSkipped
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_already_released
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - no_transactional_fees
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_cap_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - transactional_fees_not_computed
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - chargeback_reserve_policy_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - fee_variant_not_applied
+                            feeId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                          required:
+                            - code
+                            - feeId
+                          additionalProperties: false
+                  batchId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountName:
+                    type: string
+                  batchNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  attemptNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  status:
+                    type: string
+                    enum:
+                      - processed
+                      - paid
+                      - undone
+                  settledStatus:
+                    type: string
+                    enum:
+                      - pending_payment
+                      - settled
+                      - undone
+                  approvedBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  processedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  settlementDate:
+                    nullable: true
+                    type: string
+                    pattern: ^\d{4}-\d{2}-\d{2}$
+                  paidAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  paidBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoneAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  undoneBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoReason:
+                    nullable: true
+                    type: string
+                  channelsAssigned:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        assignment:
+                          type: string
+                          enum:
+                            - new_primary
+                            - primary_moved_from
+                        previousAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                      required:
+                        - channelId
+                        - name
+                        - assignment
+                        - previousAccount
+                      additionalProperties: false
+                  validationSummary:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      persistent:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolved:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      blocking:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolvedMissing:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - runId
+                      - persistent
+                      - resolved
+                      - blocking
+                      - resolvedMissing
+                    additionalProperties: false
+                  exports:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      transactions:
+                        type: string
+                      reserves:
+                        type: string
+                    required:
+                      - summary
+                      - transactions
+                      - reserves
+                    additionalProperties: false
+                required:
+                  - dateRanges
+                  - channels
+                  - movements
+                  - totals
+                  - brandTotals
+                  - reservesReleasedQty
+                  - mdrAmt
+                  - mdrRate
+                  - transactionalFeeAmt
+                  - batchFees
+                  - otherFeeAmt
+                  - reserveHeldAmt
+                  - reserveReleasedAmt
+                  - reserveEarlyReleasedAmt
+                  - amountPayable
+                  - payableBreakdown
+                  - skipped
+                  - warnings
+                  - batchId
+                  - importId
+                  - accountId
+                  - accountName
+                  - batchNo
+                  - attemptNo
+                  - status
+                  - settledStatus
+                  - approvedBy
+                  - processedAt
+                  - settlementDate
+                  - paidAt
+                  - paidBy
+                  - undoneAt
+                  - undoneBy
+                  - undoReason
+                  - channelsAssigned
+                  - validationSummary
+                  - exports
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/settlements/{batchId}/unpay:
+    post:
+      summary: Remove the payment of a paid attempt, with a reason; it does not revert
+        the Back-Office
+      tags: *a13
+      description: 400 validation_error without a reason. 409 settlement_not_paid from
+        processed or undone (details.status); settlement_busy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - reason
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: batchId
+          required: true
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dateRanges:
+                    type: object
+                    properties:
+                      APP:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      DEC:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      I:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      R:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                    required:
+                      - APP
+                      - DEC
+                      - I
+                      - R
+                    additionalProperties: false
+                  channels:
+                    type: array
+                    items:
+                      type: string
+                  movements:
+                    type: object
+                    properties:
+                      E:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      I:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      R:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - E
+                      - I
+                      - R
+                    additionalProperties: false
+                  totals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          enum:
+                            - deposit
+                            - declined
+                            - chargeback
+                            - refund
+                            - rdr
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeAmount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeRate:
+                          nullable: true
+                          type: string
+                          pattern: ^(0\.\d{6}|1\.0{6})$
+                      required:
+                        - category
+                        - qty
+                        - amount
+                        - feeAmount
+                        - feeRate
+                      additionalProperties: false
+                  brandTotals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cardBrand:
+                          type: string
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - cardBrand
+                        - qty
+                        - amount
+                      additionalProperties: false
+                  reservesReleasedQty:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  mdrAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  mdrRate:
+                    nullable: true
+                    type: string
+                    pattern: ^(0\.\d{6}|1\.0{6})$
+                  transactionalFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  batchFees:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        batchFeeId:
+                          nullable: true
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        feeTypeId:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        code:
+                          type: string
+                        title:
+                          type: string
+                        feeId:
+                          nullable: true
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        description:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                            - manual
+                        enteredBy:
+                          nullable: true
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                      required:
+                        - batchFeeId
+                        - feeTypeId
+                        - code
+                        - title
+                        - feeId
+                        - amount
+                        - description
+                        - source
+                        - enteredBy
+                      additionalProperties: false
+                  otherFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveHeldAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveEarlyReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  amountPayable:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  payableBreakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          enum:
+                            - deposit
+                            - chargeback
+                            - refund
+                            - rdr
+                            - transactional_fees
+                            - batch_fees
+                            - reserve_held
+                            - reserve_released
+                            - reserve_early_released
+                        label:
+                          type: string
+                        sign:
+                          type: string
+                          enum:
+                            - +
+                            - "-"
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - code
+                        - label
+                        - sign
+                        - amount
+                      additionalProperties: false
+                  skipped:
+                    type: object
+                    properties:
+                      ignored:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unmatched:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      ambiguous:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      excluded:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unresolvedStatus:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      pending:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - ignored
+                      - unmatched
+                      - ambiguous
+                      - excluded
+                      - unresolvedStatus
+                      - pending
+                    additionalProperties: false
+                  warnings:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - undated_adjustment
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                            feeSkipped:
+                              type: boolean
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                            - feeSkipped
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_already_released
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - no_transactional_fees
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_cap_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - transactional_fees_not_computed
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - chargeback_reserve_policy_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - fee_variant_not_applied
+                            feeId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                          required:
+                            - code
+                            - feeId
+                          additionalProperties: false
+                  batchId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountName:
+                    type: string
+                  batchNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  attemptNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  status:
+                    type: string
+                    enum:
+                      - processed
+                      - paid
+                      - undone
+                  settledStatus:
+                    type: string
+                    enum:
+                      - pending_payment
+                      - settled
+                      - undone
+                  approvedBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  processedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  settlementDate:
+                    nullable: true
+                    type: string
+                    pattern: ^\d{4}-\d{2}-\d{2}$
+                  paidAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  paidBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoneAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  undoneBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoReason:
+                    nullable: true
+                    type: string
+                  channelsAssigned:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        assignment:
+                          type: string
+                          enum:
+                            - new_primary
+                            - primary_moved_from
+                        previousAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                      required:
+                        - channelId
+                        - name
+                        - assignment
+                        - previousAccount
+                      additionalProperties: false
+                  validationSummary:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      persistent:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolved:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      blocking:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolvedMissing:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - runId
+                      - persistent
+                      - resolved
+                      - blocking
+                      - resolvedMissing
+                    additionalProperties: false
+                  exports:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      transactions:
+                        type: string
+                      reserves:
+                        type: string
+                    required:
+                      - summary
+                      - transactions
+                      - reserves
+                    additionalProperties: false
+                required:
+                  - dateRanges
+                  - channels
+                  - movements
+                  - totals
+                  - brandTotals
+                  - reservesReleasedQty
+                  - mdrAmt
+                  - mdrRate
+                  - transactionalFeeAmt
+                  - batchFees
+                  - otherFeeAmt
+                  - reserveHeldAmt
+                  - reserveReleasedAmt
+                  - reserveEarlyReleasedAmt
+                  - amountPayable
+                  - payableBreakdown
+                  - skipped
+                  - warnings
+                  - batchId
+                  - importId
+                  - accountId
+                  - accountName
+                  - batchNo
+                  - attemptNo
+                  - status
+                  - settledStatus
+                  - approvedBy
+                  - processedAt
+                  - settlementDate
+                  - paidAt
+                  - paidBy
+                  - undoneAt
+                  - undoneBy
+                  - undoReason
+                  - channelsAssigned
+                  - validationSummary
+                  - exports
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/settlements/{batchId}/undo:
+    post:
+      summary: Undo a processed attempt, with a reason, keeping its data; its import
+        goes back to analyzed
+      tags: *a13
+      description: Supersedes the current validation run of the import and reopens the
+        missing findings the attempt resolved; the primary account of the
+        channels does not change. 400 validation_error without a reason. 409
+        settlement_payment_not_removed from paid; settlement_not_processed from
+        undone (details.status); settlement_not_current when it is not the
+        current attempt of its import; settlement_busy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - reason
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: batchId
+          required: true
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dateRanges:
+                    type: object
+                    properties:
+                      APP:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      DEC:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      I:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                      R:
+                        nullable: true
+                        type: object
+                        properties:
+                          min:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          max:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - min
+                          - max
+                        additionalProperties: false
+                    required:
+                      - APP
+                      - DEC
+                      - I
+                      - R
+                    additionalProperties: false
+                  channels:
+                    type: array
+                    items:
+                      type: string
+                  movements:
+                    type: object
+                    properties:
+                      E:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      I:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      R:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - E
+                      - I
+                      - R
+                    additionalProperties: false
+                  totals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          enum:
+                            - deposit
+                            - declined
+                            - chargeback
+                            - refund
+                            - rdr
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeAmount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        feeRate:
+                          nullable: true
+                          type: string
+                          pattern: ^(0\.\d{6}|1\.0{6})$
+                      required:
+                        - category
+                        - qty
+                        - amount
+                        - feeAmount
+                        - feeRate
+                      additionalProperties: false
+                  brandTotals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cardBrand:
+                          type: string
+                        qty:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - cardBrand
+                        - qty
+                        - amount
+                      additionalProperties: false
+                  reservesReleasedQty:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  mdrAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  mdrRate:
+                    nullable: true
+                    type: string
+                    pattern: ^(0\.\d{6}|1\.0{6})$
+                  transactionalFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  batchFees:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        batchFeeId:
+                          nullable: true
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        feeTypeId:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        code:
+                          type: string
+                        title:
+                          type: string
+                        feeId:
+                          nullable: true
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                        description:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                            - manual
+                        enteredBy:
+                          nullable: true
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                      required:
+                        - batchFeeId
+                        - feeTypeId
+                        - code
+                        - title
+                        - feeId
+                        - amount
+                        - description
+                        - source
+                        - enteredBy
+                      additionalProperties: false
+                  otherFeeAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveHeldAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  reserveEarlyReleasedAmt:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  amountPayable:
+                    type: string
+                    pattern: ^-?\d+\.\d{4}$
+                  payableBreakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          enum:
+                            - deposit
+                            - chargeback
+                            - refund
+                            - rdr
+                            - transactional_fees
+                            - batch_fees
+                            - reserve_held
+                            - reserve_released
+                            - reserve_early_released
+                        label:
+                          type: string
+                        sign:
+                          type: string
+                          enum:
+                            - +
+                            - "-"
+                        amount:
+                          type: string
+                          pattern: ^-?\d+\.\d{4}$
+                      required:
+                        - code
+                        - label
+                        - sign
+                        - amount
+                      additionalProperties: false
+                  skipped:
+                    type: object
+                    properties:
+                      ignored:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unmatched:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      ambiguous:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      excluded:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unresolvedStatus:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      pending:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - ignored
+                      - unmatched
+                      - ambiguous
+                      - excluded
+                      - unresolvedStatus
+                      - pending
+                    additionalProperties: false
+                  warnings:
+                    type: array
+                    items:
+                      oneOf:
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - undated_adjustment
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                            feeSkipped:
+                              type: boolean
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                            - feeSkipped
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_already_released
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                          required:
+                            - code
+                            - transactionId
+                            - sheetId
+                            - rowNo
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - no_transactional_fees
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - reserve_cap_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - transactional_fees_not_computed
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - chargeback_reserve_policy_not_applied
+                          required:
+                            - code
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            code:
+                              type: string
+                              enum:
+                                - fee_variant_not_applied
+                            feeId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                          required:
+                            - code
+                            - feeId
+                          additionalProperties: false
+                  batchId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountName:
+                    type: string
+                  batchNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  attemptNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  status:
+                    type: string
+                    enum:
+                      - processed
+                      - paid
+                      - undone
+                  settledStatus:
+                    type: string
+                    enum:
+                      - pending_payment
+                      - settled
+                      - undone
+                  approvedBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  processedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  settlementDate:
+                    nullable: true
+                    type: string
+                    pattern: ^\d{4}-\d{2}-\d{2}$
+                  paidAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  paidBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoneAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  undoneBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  undoReason:
+                    nullable: true
+                    type: string
+                  channelsAssigned:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        assignment:
+                          type: string
+                          enum:
+                            - new_primary
+                            - primary_moved_from
+                        previousAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                      required:
+                        - channelId
+                        - name
+                        - assignment
+                        - previousAccount
+                      additionalProperties: false
+                  validationSummary:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      persistent:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolved:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      blocking:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      resolvedMissing:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                    required:
+                      - runId
+                      - persistent
+                      - resolved
+                      - blocking
+                      - resolvedMissing
+                    additionalProperties: false
+                  exports:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      transactions:
+                        type: string
+                      reserves:
+                        type: string
+                    required:
+                      - summary
+                      - transactions
+                      - reserves
+                    additionalProperties: false
+                required:
+                  - dateRanges
+                  - channels
+                  - movements
+                  - totals
+                  - brandTotals
+                  - reservesReleasedQty
+                  - mdrAmt
+                  - mdrRate
+                  - transactionalFeeAmt
+                  - batchFees
+                  - otherFeeAmt
+                  - reserveHeldAmt
+                  - reserveReleasedAmt
+                  - reserveEarlyReleasedAmt
+                  - amountPayable
+                  - payableBreakdown
+                  - skipped
+                  - warnings
+                  - batchId
+                  - importId
+                  - accountId
+                  - accountName
+                  - batchNo
+                  - attemptNo
+                  - status
+                  - settledStatus
+                  - approvedBy
+                  - processedAt
+                  - settlementDate
+                  - paidAt
+                  - paidBy
+                  - undoneAt
+                  - undoneBy
+                  - undoReason
+                  - channelsAssigned
+                  - validationSummary
+                  - exports
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
           description: Default Response
           content:
             application/json:

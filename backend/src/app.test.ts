@@ -222,6 +222,26 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes pay, unpay and undo of an attempt (settlement-lifecycle)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    for (const action of ['pay', 'unpay', 'undo']) {
+      const path = `/api/v1/settlements/{batchId}/${action}`
+      const operation = doc.paths[path]?.post
+      expect(operation, `post ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['settlements'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      for (const status of ['200', '400', '401', '403', '404', '409'])
+        expect(operation.responses, path).toHaveProperty(status)
+    }
+    expect(doc.paths['/api/v1/settlements/{batchId}/pay'].post.requestBody).toBeUndefined()
+    for (const action of ['unpay', 'undo'])
+      expect(doc.paths[`/api/v1/settlements/{batchId}/${action}`].post.requestBody.required).toBe(true)
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })

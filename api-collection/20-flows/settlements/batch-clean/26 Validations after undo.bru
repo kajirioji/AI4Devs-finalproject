@@ -1,0 +1,27 @@
+meta {
+  name: 26 Validations after undo
+  type: http
+  seq: 27
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+tests {
+  test('the import is analyzed without a current run, and says why the review was invalidated', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importStatus).to.equal('analyzed');
+    expect(res.body.run).to.equal(null);
+    expect(res.body.lastInvalidatedReview.reason).to.equal('settlement_undone');
+  });
+}

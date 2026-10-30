@@ -1,0 +1,32 @@
+meta {
+  name: Undo - unknown
+  type: http
+  seq: 78
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "Smoke test"
+  }
+}
+
+tests {
+  test('an unknown attempt: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Settlement not found');
+  });
+}

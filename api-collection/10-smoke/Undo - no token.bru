@@ -1,0 +1,35 @@
+meta {
+  name: Undo - no token
+  type: http
+  seq: 75
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: none
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "Smoke test"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('no token: 401 unauthorized', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('unauthorized');
+  });
+}

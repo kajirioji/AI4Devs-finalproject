@@ -3357,7 +3357,7 @@ export interface paths {
                                 /** Format: date-time */
                                 invalidatedAt: string;
                                 /** @enum {string} */
-                                reason: "rerun" | "inclusion_change";
+                                reason: "rerun" | "inclusion_change" | "settlement_undone";
                                 newRunId: number | null;
                                 occurrenceId: string | null;
                             } | null;
@@ -3507,7 +3507,7 @@ export interface paths {
                                 /** Format: date-time */
                                 invalidatedAt: string;
                                 /** @enum {string} */
-                                reason: "rerun" | "inclusion_change";
+                                reason: "rerun" | "inclusion_change" | "settlement_undone";
                                 newRunId: number | null;
                                 occurrenceId: string | null;
                             } | null;
@@ -4267,7 +4267,7 @@ export interface paths {
                                 /** Format: date-time */
                                 invalidatedAt: string;
                                 /** @enum {string} */
-                                reason: "rerun" | "inclusion_change";
+                                reason: "rerun" | "inclusion_change" | "settlement_undone";
                                 newRunId: number | null;
                                 occurrenceId: string | null;
                             } | null;
@@ -6107,6 +6107,885 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{batchId}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a processed attempt as paid: its movements become Settled
+         * @description Without a body. 409 settlement_not_processed from paid or undone (details.status); settlement_busy.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dateRanges: {
+                                APP: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                DEC: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                I: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                R: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                            };
+                            channels: string[];
+                            movements: {
+                                E: number;
+                                I: number;
+                                R: number;
+                            };
+                            totals: {
+                                /** @enum {string} */
+                                category: "deposit" | "declined" | "chargeback" | "refund" | "rdr";
+                                qty: number;
+                                amount: string;
+                                feeAmount: string;
+                                feeRate: string | null;
+                            }[];
+                            brandTotals: {
+                                cardBrand: string;
+                                qty: number;
+                                amount: string;
+                            }[];
+                            reservesReleasedQty: number;
+                            mdrAmt: string;
+                            mdrRate: string | null;
+                            transactionalFeeAmt: string;
+                            batchFees: {
+                                batchFeeId: number | null;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                /** Format: uuid */
+                                feeId: string | null;
+                                amount: string;
+                                description: string | null;
+                                /** @enum {string} */
+                                source: "file" | "manual";
+                                enteredBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                            }[];
+                            otherFeeAmt: string;
+                            reserveHeldAmt: string;
+                            reserveReleasedAmt: string;
+                            reserveEarlyReleasedAmt: string;
+                            amountPayable: string;
+                            payableBreakdown: {
+                                /** @enum {string} */
+                                code: "deposit" | "chargeback" | "refund" | "rdr" | "transactional_fees" | "batch_fees" | "reserve_held" | "reserve_released" | "reserve_early_released";
+                                label: string;
+                                /** @enum {string} */
+                                sign: "+" | "-";
+                                amount: string;
+                            }[];
+                            skipped: {
+                                ignored: number;
+                                unmatched: number;
+                                ambiguous: number;
+                                excluded: number;
+                                unresolvedStatus: number;
+                                pending: number;
+                            };
+                            warnings: ({
+                                /** @enum {string} */
+                                code: "undated_adjustment";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                                feeSkipped: boolean;
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_already_released";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                            } | {
+                                /** @enum {string} */
+                                code: "no_transactional_fees";
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_cap_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "transactional_fees_not_computed";
+                            } | {
+                                /** @enum {string} */
+                                code: "chargeback_reserve_policy_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "fee_variant_not_applied";
+                                /** Format: uuid */
+                                feeId: string;
+                            })[];
+                            /** Format: uuid */
+                            batchId: string;
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            accountName: string;
+                            batchNo: number;
+                            attemptNo: number;
+                            /** @enum {string} */
+                            status: "processed" | "paid" | "undone";
+                            /** @enum {string} */
+                            settledStatus: "pending_payment" | "settled" | "undone";
+                            approvedBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            processedAt: string;
+                            settlementDate: string | null;
+                            /** Format: date-time */
+                            paidAt: string | null;
+                            paidBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            /** Format: date-time */
+                            undoneAt: string | null;
+                            undoneBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            undoReason: string | null;
+                            channelsAssigned: {
+                                channelId: number;
+                                name: string;
+                                /** @enum {string} */
+                                assignment: "new_primary" | "primary_moved_from";
+                                previousAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                            }[];
+                            validationSummary: {
+                                runId: number;
+                                persistent: number;
+                                resolved: number;
+                                blocking: number;
+                                resolvedMissing: number;
+                            } | null;
+                            exports: {
+                                summary: string;
+                                transactions: string;
+                                reserves: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{batchId}/unpay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove the payment of a paid attempt, with a reason; it does not revert the Back-Office
+         * @description 400 validation_error without a reason. 409 settlement_not_paid from processed or undone (details.status); settlement_busy.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dateRanges: {
+                                APP: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                DEC: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                I: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                R: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                            };
+                            channels: string[];
+                            movements: {
+                                E: number;
+                                I: number;
+                                R: number;
+                            };
+                            totals: {
+                                /** @enum {string} */
+                                category: "deposit" | "declined" | "chargeback" | "refund" | "rdr";
+                                qty: number;
+                                amount: string;
+                                feeAmount: string;
+                                feeRate: string | null;
+                            }[];
+                            brandTotals: {
+                                cardBrand: string;
+                                qty: number;
+                                amount: string;
+                            }[];
+                            reservesReleasedQty: number;
+                            mdrAmt: string;
+                            mdrRate: string | null;
+                            transactionalFeeAmt: string;
+                            batchFees: {
+                                batchFeeId: number | null;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                /** Format: uuid */
+                                feeId: string | null;
+                                amount: string;
+                                description: string | null;
+                                /** @enum {string} */
+                                source: "file" | "manual";
+                                enteredBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                            }[];
+                            otherFeeAmt: string;
+                            reserveHeldAmt: string;
+                            reserveReleasedAmt: string;
+                            reserveEarlyReleasedAmt: string;
+                            amountPayable: string;
+                            payableBreakdown: {
+                                /** @enum {string} */
+                                code: "deposit" | "chargeback" | "refund" | "rdr" | "transactional_fees" | "batch_fees" | "reserve_held" | "reserve_released" | "reserve_early_released";
+                                label: string;
+                                /** @enum {string} */
+                                sign: "+" | "-";
+                                amount: string;
+                            }[];
+                            skipped: {
+                                ignored: number;
+                                unmatched: number;
+                                ambiguous: number;
+                                excluded: number;
+                                unresolvedStatus: number;
+                                pending: number;
+                            };
+                            warnings: ({
+                                /** @enum {string} */
+                                code: "undated_adjustment";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                                feeSkipped: boolean;
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_already_released";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                            } | {
+                                /** @enum {string} */
+                                code: "no_transactional_fees";
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_cap_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "transactional_fees_not_computed";
+                            } | {
+                                /** @enum {string} */
+                                code: "chargeback_reserve_policy_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "fee_variant_not_applied";
+                                /** Format: uuid */
+                                feeId: string;
+                            })[];
+                            /** Format: uuid */
+                            batchId: string;
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            accountName: string;
+                            batchNo: number;
+                            attemptNo: number;
+                            /** @enum {string} */
+                            status: "processed" | "paid" | "undone";
+                            /** @enum {string} */
+                            settledStatus: "pending_payment" | "settled" | "undone";
+                            approvedBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            processedAt: string;
+                            settlementDate: string | null;
+                            /** Format: date-time */
+                            paidAt: string | null;
+                            paidBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            /** Format: date-time */
+                            undoneAt: string | null;
+                            undoneBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            undoReason: string | null;
+                            channelsAssigned: {
+                                channelId: number;
+                                name: string;
+                                /** @enum {string} */
+                                assignment: "new_primary" | "primary_moved_from";
+                                previousAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                            }[];
+                            validationSummary: {
+                                runId: number;
+                                persistent: number;
+                                resolved: number;
+                                blocking: number;
+                                resolvedMissing: number;
+                            } | null;
+                            exports: {
+                                summary: string;
+                                transactions: string;
+                                reserves: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{batchId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a processed attempt, with a reason, keeping its data; its import goes back to analyzed
+         * @description Supersedes the current validation run of the import and reopens the missing findings the attempt resolved; the primary account of the channels does not change. 400 validation_error without a reason. 409 settlement_payment_not_removed from paid; settlement_not_processed from undone (details.status); settlement_not_current when it is not the current attempt of its import; settlement_busy.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dateRanges: {
+                                APP: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                DEC: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                I: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                R: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                            };
+                            channels: string[];
+                            movements: {
+                                E: number;
+                                I: number;
+                                R: number;
+                            };
+                            totals: {
+                                /** @enum {string} */
+                                category: "deposit" | "declined" | "chargeback" | "refund" | "rdr";
+                                qty: number;
+                                amount: string;
+                                feeAmount: string;
+                                feeRate: string | null;
+                            }[];
+                            brandTotals: {
+                                cardBrand: string;
+                                qty: number;
+                                amount: string;
+                            }[];
+                            reservesReleasedQty: number;
+                            mdrAmt: string;
+                            mdrRate: string | null;
+                            transactionalFeeAmt: string;
+                            batchFees: {
+                                batchFeeId: number | null;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                /** Format: uuid */
+                                feeId: string | null;
+                                amount: string;
+                                description: string | null;
+                                /** @enum {string} */
+                                source: "file" | "manual";
+                                enteredBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                            }[];
+                            otherFeeAmt: string;
+                            reserveHeldAmt: string;
+                            reserveReleasedAmt: string;
+                            reserveEarlyReleasedAmt: string;
+                            amountPayable: string;
+                            payableBreakdown: {
+                                /** @enum {string} */
+                                code: "deposit" | "chargeback" | "refund" | "rdr" | "transactional_fees" | "batch_fees" | "reserve_held" | "reserve_released" | "reserve_early_released";
+                                label: string;
+                                /** @enum {string} */
+                                sign: "+" | "-";
+                                amount: string;
+                            }[];
+                            skipped: {
+                                ignored: number;
+                                unmatched: number;
+                                ambiguous: number;
+                                excluded: number;
+                                unresolvedStatus: number;
+                                pending: number;
+                            };
+                            warnings: ({
+                                /** @enum {string} */
+                                code: "undated_adjustment";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                                feeSkipped: boolean;
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_already_released";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                            } | {
+                                /** @enum {string} */
+                                code: "no_transactional_fees";
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_cap_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "transactional_fees_not_computed";
+                            } | {
+                                /** @enum {string} */
+                                code: "chargeback_reserve_policy_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "fee_variant_not_applied";
+                                /** Format: uuid */
+                                feeId: string;
+                            })[];
+                            /** Format: uuid */
+                            batchId: string;
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            accountName: string;
+                            batchNo: number;
+                            attemptNo: number;
+                            /** @enum {string} */
+                            status: "processed" | "paid" | "undone";
+                            /** @enum {string} */
+                            settledStatus: "pending_payment" | "settled" | "undone";
+                            approvedBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            processedAt: string;
+                            settlementDate: string | null;
+                            /** Format: date-time */
+                            paidAt: string | null;
+                            paidBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            /** Format: date-time */
+                            undoneAt: string | null;
+                            undoneBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            undoReason: string | null;
+                            channelsAssigned: {
+                                channelId: number;
+                                name: string;
+                                /** @enum {string} */
+                                assignment: "new_primary" | "primary_moved_from";
+                                previousAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                            }[];
+                            validationSummary: {
+                                runId: number;
+                                persistent: number;
+                                resolved: number;
+                                blocking: number;
+                                resolvedMissing: number;
+                            } | null;
+                            exports: {
+                                summary: string;
+                                transactions: string;
+                                reserves: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

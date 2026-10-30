@@ -1,0 +1,35 @@
+meta {
+  name: 29 Review again
+  type: http
+  seq: 30
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('setRunId') });
+}
+
+tests {
+  test('continue: the import is validated', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importStatus).to.equal('validated');
+  });
+}

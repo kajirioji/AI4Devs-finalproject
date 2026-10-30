@@ -40,11 +40,11 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 ## 5. OpenAPI, cliente y colección Bruno
 
-- [ ] 5.1 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; ampliar `app.test.ts` con las tres rutas; verificar `openapi:check`
-- [ ] 5.2 Añadir `00-auth/Login as payments`, `as: payments` en `collection.bru` y `SEED_PAYMENTS_USER` en `.env.example`; la persona copia la variable a su `api-collection/.env`, que no se lee ni se versiona
+- [x] 5.1 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; ampliar `app.test.ts` con las tres rutas; verificar `openapi:check`
+- [x] 5.2 Añadir `00-auth/Login as payments`, `as: payments` en `collection.bru` y `SEED_PAYMENTS_USER` en `.env.example`; la persona copia la variable a su `api-collection/.env`, que no se lee ni se versiona
 - [ ] 5.3 Añadir a `10-smoke` los negativos `403` (`viewer`, `analyst` en `pay`/`unpay`, `payments` en `undo`), `404` y `400`, y verificar con `pnpm test:api:smoke`
-- [ ] 5.4 Ampliar `20-flows/settlements/batch-clean` con el recorrido del escenario "Flujo de punta a punta"; a mano, sin reimportar. Lo ejecuta la persona con `! pnpm db:seed` y `! pnpm test:api`, con `pnpm dev` levantado
-- [ ] 5.5 Commit: feat(api): pagar, retirar el pago y deshacer en OpenAPI y en la colección
+- [x] 5.4 Ampliar `20-flows/settlements/batch-clean` con el recorrido del escenario "Flujo de punta a punta"; a mano, sin reimportar. Lo ejecuta la persona con `! pnpm db:seed` y `! pnpm test:api`, con `pnpm dev` levantado
+- [x] 5.5 Commit: feat(api): pagar, retirar el pago y deshacer en OpenAPI y en la colección
 
 ## 6. Frontend: acciones y diálogo
 

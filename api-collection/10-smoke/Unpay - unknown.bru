@@ -1,0 +1,40 @@
+meta {
+  name: Unpay - unknown
+  type: http
+  seq: 73
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/unpay
+  body: json
+  auth: bearer
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "Smoke test"
+  }
+}
+
+auth:bearer {
+  token: {{paymentsToken}}
+}
+
+vars:pre-request {
+  as: payments
+}
+
+tests {
+  test('an unknown attempt: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Settlement not found');
+  });
+}

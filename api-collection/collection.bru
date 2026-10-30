@@ -13,7 +13,8 @@ auth:bearer {
 script:pre-request {
   // Logs in on demand so any folder or single request can run on its own (design D3).
   // Requests that log in themselves or need no session (logins, flows, anonymous negatives) set `selfAuth: true`.
-  // Requests that must run as the viewer set the request var `as: viewer` and use {{viewerToken}}.
+  // Requests that must run as the viewer set the request var `as: viewer` and use {{viewerToken}};
+  // those of pay and unpay, `as: payments` and {{paymentsToken}}.
   if (bru.getRequestVar('selfAuth') === 'true') {
     return;
   }
@@ -22,5 +23,8 @@ script:pre-request {
   }
   if (bru.getRequestVar('as') === 'viewer' && !bru.getVar('viewerToken')) {
     await bru.runRequest('00-auth/Login as viewer');
+  }
+  if (bru.getRequestVar('as') === 'payments' && !bru.getVar('paymentsToken')) {
+    await bru.runRequest('00-auth/Login as payments');
   }
 }

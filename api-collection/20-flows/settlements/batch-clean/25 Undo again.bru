@@ -1,0 +1,32 @@
+meta {
+  name: 25 Undo again
+  type: http
+  seq: 26
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+body:json {
+  {
+    "reason": "Wrong settlement date"
+  }
+}
+
+tests {
+  test('an undone attempt is final: 409 settlement_not_processed', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('settlement_not_processed');
+    expect(res.body.details.status).to.equal('undone');
+  });
+}

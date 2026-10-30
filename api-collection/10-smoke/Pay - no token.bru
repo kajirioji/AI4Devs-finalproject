@@ -1,0 +1,29 @@
+meta {
+  name: Pay - no token
+  type: http
+  seq: 66
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/pay
+  body: none
+  auth: none
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('no token: 401 unauthorized', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('unauthorized');
+  });
+}

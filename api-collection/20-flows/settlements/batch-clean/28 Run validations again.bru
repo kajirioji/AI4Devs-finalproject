@@ -1,0 +1,31 @@
+meta {
+  name: 28 Run validations again
+  type: http
+  seq: 29
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('setRunId', res.body.run.runId);
+  }
+}
+
+tests {
+  test('runs the eight validations, not blocked', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.run.blocked).to.equal(false);
+  });
+}
