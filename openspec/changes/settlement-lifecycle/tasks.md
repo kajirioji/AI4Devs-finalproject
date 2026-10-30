@@ -48,9 +48,9 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 ## 6. Frontend: acciones y diálogo
 
-- [ ] 6.1 Ampliar los fixtures y los handlers MSW (`test/msw/settlements.ts`) con `pay`, `unpay` y `undo`, y `contract.ts` con las llamadas, las fechas de auditoría y los `details`; verificar con `settlements.test.ts`
-- [ ] 6.2 Escribir los tests de visibilidad por usuario y estado, de **Mark as paid** y del diálogo (sin motivo, 500 caracteres, cancelar, teclado, doble clic) y comprobar que fallan
-- [ ] 6.3 Commit: test(web): acciones del intento según permiso y estado
+- [x] 6.1 Ampliar los fixtures y los handlers MSW (`test/msw/settlements.ts`) con `pay`, `unpay` y `undo`, y `contract.ts` con las llamadas, las fechas de auditoría y los `details`; verificar con `settlements.test.ts`
+- [x] 6.2 Escribir los tests de visibilidad por usuario y estado, de **Mark as paid** y del diálogo (sin motivo, 500 caracteres, cancelar, teclado, doble clic) y comprobar que fallan
+- [x] 6.3 Commit: test(web): acciones del intento según permiso y estado
 - [ ] 6.4 Implementar `SettlementActions`, `ReasonDialog`, `useCanPay` y `useSettlementAction` (D9, D10), con los textos en `strings.ts`; verificar con los tests de 6.2 y `read-only.test.tsx`
 - [ ] 6.5 Cubrir los errores de la spec (`409` de estado, `settlement_busy`, red) y el estado sin recargar (lista, movimientos, sin optimismo), con tests; actualizar el comentario de `settlementQuery`
 - [ ] 6.6 Commit: feat(web): marcar como pagado, retirar el pago y deshacer desde el intento

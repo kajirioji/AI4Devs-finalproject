@@ -11,8 +11,16 @@
 // validation_run_superseded from the current run, batch_no_taken from the active numbers, and
 // channel_assignment_not_confirmed when the fixture requires a confirmation the body does not carry. The attempts of
 // an account and the movements of an attempt (settlements-browse D13) are fixtures in the order of the API: the fake
-// only paginates them and records the query, never filtering by status or days nor sorting.
-import { Cycle, ExportQuery, SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
+// only paginates them and records the query, never filtering by status or days nor sorting. Pay, unpay and undo
+// (settlement-lifecycle) change the stored attempt, its row in the list and the settled flag of its movements; undo
+// also takes the import back to analyzed and supersedes its run. The 409 of each follows from the stored status.
+import {
+  Cycle,
+  ExportQuery,
+  ReasonRequest,
+  SettlementRequest as SettlementRequestSchema,
+  TRANSACTION_STATUSES,
+} from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
   AccountFee,
@@ -34,7 +42,7 @@ import { auditInstant, businessDate } from '@/lib/format'
 import { ACCOUNT_IDS, ACCOUNTS, PROVIDERS, USERS, type UserName } from './fixtures'
 import type { AccountName } from './import-fixtures'
 import { type FakeImport, importRecord, visibleImport } from './imports'
-import { currentRunId } from './validations'
+import { currentRunId, supersedeRunOnUndo } from './validations'
 
 const API = '*/api/v1'
 
@@ -283,6 +291,10 @@ export type SettlementRoute =
   | 'export'
   | 'accountSettlements'
   | 'transactions'
+  | 'pay'
+  | 'unpay'
+  | 'undo'
+  | 'importSettlements'
 
 export interface SettlementRequestLog {
   route: SettlementRoute
@@ -724,6 +736,45 @@ function route(
   }
 }
 
+/** Writes the attempt and what shows it: its row in the list of the account and the settled flag of its movements. */
+function storeAttempt(view: SettlementView): SettlementView {
+  state.attempts.set(view.batchId, view)
+  const rows = state.accountSettlements.get(view.accountId)
+  if (rows) {
+    state.accountSettlements.set(
+      view.accountId,
+      rows.map((row) =>
+        row.batchId === view.batchId ? { ...row, status: view.status, settledStatus: view.settledStatus } : row,
+      ),
+    )
+  }
+  const settled = view.status === 'paid'
+  for (const [key, movements] of state.movements) {
+    if (key.startsWith(`${view.batchId}:`))
+      state.movements.set(
+        key,
+        movements.map((m) => ({ ...m, settled })),
+      )
+  }
+  return view
+}
+
+const stateError = (code: string, message: string, status: string) => error(409, code, message, { status })
+
+/** Permission, then scope, as the API: the attempt of the action, or the answer. */
+function admitAction(user: UserName, batchId: unknown, permission: string): SettlementView | Response {
+  if (!USERS[user].permissions.includes(permission as never)) return forbidden()
+  const view = state.attempts.get(String(batchId))
+  if (!view || !canSeeAccount(user, view.accountId)) return notFound('Settlement')
+  return view
+}
+
+function reasonOf(body: unknown): string | Response {
+  const parsed = ReasonRequest.safeParse(body)
+  if (parsed.success) return parsed.data.reason
+  return error(400, 'validation_error', `reason: ${parsed.error.issues[0]!.message}`)
+}
+
 /** Shape of the strict body of preview and process, with the schema of the API: a 400 validation_error. */
 function shapeError(body: unknown): Response | null {
   const parsed = SettlementRequestSchema.safeParse(body)
@@ -874,6 +925,91 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
           const view = state.attempts.get(String(params.batchId))
           if (!view || !canSeeAccount(user, view.accountId)) return notFound('Settlement')
           return HttpResponse.json(view)
+        },
+        caller,
+      ),
+    ),
+
+    http.post(
+      `${API}/settlements/:batchId/pay`,
+      route(
+        'pay',
+        ({ params, user }) => {
+          const view = admitAction(user, params.batchId, 'payment.process')
+          if (view instanceof Response) return view
+          if (view.status !== 'processed') {
+            return stateError('settlement_not_processed', 'This batch is not processed', view.status)
+          }
+          return HttpResponse.json(
+            storeAttempt({
+              ...view,
+              status: 'paid',
+              settledStatus: 'settled',
+              paidAt: auditInstant(now()),
+              paidBy: userRef(user),
+            }),
+          )
+        },
+        caller,
+      ),
+    ),
+
+    http.post(
+      `${API}/settlements/:batchId/unpay`,
+      route(
+        'unpay',
+        ({ params, user, body }) => {
+          const view = admitAction(user, params.batchId, 'payment.process')
+          if (view instanceof Response) return view
+          const reason = reasonOf(body)
+          if (reason instanceof Response) return reason
+          if (view.status !== 'paid') return stateError('settlement_not_paid', 'This batch is not paid', view.status)
+          return HttpResponse.json(
+            storeAttempt({
+              ...view,
+              status: 'processed',
+              settledStatus: 'pending_payment',
+              paidAt: null,
+              paidBy: null,
+            }),
+          )
+        },
+        caller,
+      ),
+    ),
+
+    http.post(
+      `${API}/settlements/:batchId/undo`,
+      route(
+        'undo',
+        ({ params, user, body }) => {
+          const view = admitAction(user, params.batchId, 'settlement.process')
+          if (view instanceof Response) return view
+          const reason = reasonOf(body)
+          if (reason instanceof Response) return reason
+          if (view.status === 'paid') {
+            return stateError('settlement_payment_not_removed', 'Remove the payment first', view.status)
+          }
+          if (view.status !== 'processed') {
+            return stateError('settlement_not_processed', 'This batch is not processed', view.status)
+          }
+          const record = visibleImport(user, view.importId)
+          if (record) {
+            record.status = 'analyzed'
+            record.currentBatchId = null
+            supersedeRunOnUndo(record.importId, user)
+          }
+          state.active = state.active.filter((a) => a.importId !== view.importId)
+          return HttpResponse.json(
+            storeAttempt({
+              ...view,
+              status: 'undone',
+              settledStatus: 'undone',
+              undoneAt: auditInstant(now()),
+              undoneBy: userRef(user),
+              undoReason: reason,
+            }),
+          )
         },
         caller,
       ),
