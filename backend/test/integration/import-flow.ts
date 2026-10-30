@@ -42,7 +42,7 @@ export interface Part {
   bytes: Uint8Array
 }
 
-export type User = 'analyst' | 'viewer'
+export type User = 'analyst' | 'viewer' | 'payments'
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 type Ctx = Awaited<ReturnType<typeof createTestApp>>
 
@@ -72,8 +72,8 @@ export function confirmProposal(detail: ImportDetail): MappingConfirmation {
 
 export class ImportFlow {
   readonly accountIds: Record<string, string> = {}
-  readonly tokens: Record<User, string> = { analyst: '', viewer: '' }
-  readonly userIds: Record<User, number> = { analyst: 0, viewer: 0 }
+  readonly tokens: Record<User, string> = { analyst: '', viewer: '', payments: '' }
+  readonly userIds: Record<User, number> = { analyst: 0, viewer: 0, payments: 0 }
   readonly createdImportIds = new Set<string>()
 
   constructor(readonly ctx: Ctx) {}
@@ -82,7 +82,7 @@ export class ImportFlow {
     const { app, prisma } = this.ctx
     for (const a of await prisma.account.findMany({ select: { accountId: true, name: true } }))
       this.accountIds[a.name] = a.accountId
-    for (const userName of ['analyst', 'viewer'] as const) {
+    for (const userName of ['analyst', 'viewer', 'payments'] as const) {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/auth/login',

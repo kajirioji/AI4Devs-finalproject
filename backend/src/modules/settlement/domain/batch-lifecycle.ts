@@ -6,14 +6,19 @@ export type LifecycleAction = 'pay' | 'unpay' | 'undo'
 export type TransitionError = 'not_processed' | 'not_paid' | 'payment_not_removed'
 export type Transition = { ok: true; from: BatchStatus; to: BatchStatus } | { ok: false; error: TransitionError }
 
+/** Each action, from the only status that admits it. */
+export const LIFECYCLE_MOVES: Record<LifecycleAction, { from: BatchStatus; to: BatchStatus }> = {
+  pay: { from: 'processed', to: 'paid' },
+  unpay: { from: 'paid', to: 'processed' },
+  undo: { from: 'processed', to: 'undone' },
+}
+
+function rejection(status: BatchStatus, action: LifecycleAction): TransitionError {
+  if (action === 'unpay') return 'not_paid'
+  return action === 'undo' && status === 'paid' ? 'payment_not_removed' : 'not_processed'
+}
+
 export function transitionOf(status: BatchStatus, action: LifecycleAction): Transition {
-  switch (action) {
-    case 'pay':
-      return status === 'processed' ? { ok: true, from: status, to: 'paid' } : { ok: false, error: 'not_processed' }
-    case 'unpay':
-      return status === 'paid' ? { ok: true, from: status, to: 'processed' } : { ok: false, error: 'not_paid' }
-    case 'undo':
-      if (status === 'processed') return { ok: true, from: status, to: 'undone' }
-      return { ok: false, error: status === 'paid' ? 'payment_not_removed' : 'not_processed' }
-  }
+  const move = LIFECYCLE_MOVES[action]
+  return status === move.from ? { ok: true, ...move } : { ok: false, error: rejection(status, action) }
 }

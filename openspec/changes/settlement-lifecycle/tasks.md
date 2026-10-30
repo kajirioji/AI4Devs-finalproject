@@ -22,7 +22,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 ## 3. Pagar y retirar el pago
 
 - [ ] 3.1 Escribir los tests de servicio y de integración de `pay` y `unpay` (HU3 CA7, sin motivo, seed, pagar de nuevo, cifras intactas, `settled` en `GET transactions`, filtro `status=paid`) y comprobar que fallan
-- [ ] 3.2 Commit: test(settlement): marcar como pagado y retirar el pago
+- [x] 3.2 Commit: test(settlement): marcar como pagado y retirar el pago
 - [ ] 3.3 Implementar el servicio, el repositorio con guarda y auditoría (D3) y las rutas con su permiso; verificar con los tests de 3.1 y los de alcance y permiso (`401`, `403` antes del alcance, `404` idéntico, `400`)
 - [ ] 3.4 Escribir los tests de concurrencia con compuertas: dos `pay`, dos `unpay`; quitar la guarda `status = @from` los hace fallar, y se revierte
 - [ ] 3.5 Commit: feat(settlement): marcar como pagado y retirar el pago
