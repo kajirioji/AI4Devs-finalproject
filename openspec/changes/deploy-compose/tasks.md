@@ -6,17 +6,17 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 - [x] 1.1 En `packages/shared`: script `build`, `tsconfig.build.json` (sin tests), `files` y `exports` con la condición `recon-dist` (design D1). Verificar: `pnpm typecheck` y `pnpm test` en verde sin carpetas `dist`
 - [x] 1.2 Cambiar `start` en `backend/package.json` a `node --conditions=recon-dist dist/src/server.js`. Verificar: tras compilar shared y backend, `pnpm --filter @recon/backend start` escucha sin `ERR_MODULE_NOT_FOUND`
-- [ ] 1.3 Crear `.dockerignore` en la raíz (`**/node_modules`, `**/dist`, `**/.env*`, `.git`, `data/uploads`, `e2e/test-results`…). Verificar: ningún `.env` dentro de la imagen construida
-- [ ] 1.4 Crear `backend/Dockerfile` con las etapas y los destinos `runtime` y `ops` (design D2). Verificar: `docker build -f backend/Dockerfile --target runtime .` y `--target ops` terminan bien
-- [ ] 1.5 Verificar la imagen `runtime`: `id` no es root; no contiene `tsx` ni el CLI de Prisma; arranca y responde `503` en `/api/v1/health` sin base; el estado de Docker pasa a `unhealthy`
-- [ ] 1.6 Commit: `fix(shared): compilar el paquete para ejecutar el backend construido` (propio y antes del resto, tras comprobar que `pnpm test`, `pnpm typecheck`, `pnpm lint` y `pnpm dev` se comportan igual) y `feat(infra): imagen Docker de la API`
+- [x] 1.3 Crear `.dockerignore` en la raíz (`**/node_modules`, `**/dist`, `**/.env*`, `.git`, `data/uploads`, `e2e/test-results`…). Verificar: ningún `.env` dentro de la imagen construida
+- [x] 1.4 Crear `backend/Dockerfile` con las etapas y los destinos `runtime` y `ops` (design D2). Verificar: `docker build -f backend/Dockerfile --target runtime .` y `--target ops` terminan bien
+- [x] 1.5 Verificar la imagen `runtime`: `id` no es root; no contiene `tsx` ni el CLI de Prisma; arranca y responde `503` en `/api/v1/health` sin base; el estado de Docker pasa a `unhealthy`
+- [x] 1.6 Commit: `fix(shared): compilar el paquete para ejecutar el backend construido` (propio y antes del resto, tras comprobar que `pnpm test`, `pnpm typecheck`, `pnpm lint` y `pnpm dev` se comportan igual) y `feat(infra): imagen Docker de la API`
 
 ## 2. Imagen web
 
-- [ ] 2.1 Crear `frontend/nginx.conf` y el fragmento de cabeceras (design D3). Verificar con `nginx -t` dentro de la imagen
-- [ ] 2.2 Crear `frontend/Dockerfile` multi-stage, sin `VITE_API_URL`. Verificar: `docker build -f frontend/Dockerfile .` termina bien y el proceso no es root
+- [x] 2.1 Crear `frontend/nginx/default.conf` y el fragmento de cabeceras `frontend/nginx/security-headers.conf` (design D3). Verificar con `nginx -t` dentro de la imagen
+- [x] 2.2 Crear `frontend/Dockerfile` multi-stage, sin `VITE_API_URL`. Verificar: `docker build -f frontend/Dockerfile .` termina bien y el proceso no es root
 - [ ] 2.3 Verificar: una ruta profunda de la SPA da `200` con `index.html`; `assets/` lleva caché inmutable; las cuatro cabeceras aparecen en `index.html`, en `assets/` y en `/api/`
-- [ ] 2.4 Commit: `feat(infra): imagen Docker de la web con Nginx`
+- [x] 2.4 Commit: `feat(infra): imagen Docker de la web con Nginx`
 
 ## 3. Compose de despliegue y base de datos
 
