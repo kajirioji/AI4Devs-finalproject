@@ -15,27 +15,27 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 ## 2. Contrato compartido y errores
 
 - [x] 2.1 En `packages/shared/src/settlement.ts`, añadir `ReasonRequest` y los campos de pago y de deshacer de `SettlementView`, con tests de forma (motivo vacío, de solo espacios y de 501 caracteres rechazados)
-- [ ] 2.2 Añadir a `application/errors.ts` los cuatro `409` de D7; el lector rellena los campos nuevos, y los tests "Batch del seed" (con `paidBy`) e "Intento deshecho" pasan
+- [x] 2.2 Añadir a `application/errors.ts` los cuatro `409` de D7; el lector rellena los campos nuevos, y los tests "Batch del seed" (con `paidBy`) e "Intento deshecho" pasan
 - [x] 2.3 Extraer `isDeadlockVictim` y el reintento a `infrastructure/deadlock-retry.ts`, sin cambio de comportamiento; verificar con los tests existentes de `settlement_busy`
 - [x] 2.4 Commit: feat(settlement): contrato y errores del ciclo de vida del intento
 
 ## 3. Pagar y retirar el pago
 
-- [ ] 3.1 Escribir los tests de servicio y de integración de `pay` y `unpay` (HU3 CA7, sin motivo, seed, pagar de nuevo, cifras intactas, `settled` en `GET transactions`, filtro `status=paid`) y comprobar que fallan
+- [x] 3.1 Escribir los tests de servicio y de integración de `pay` y `unpay` (HU3 CA7, sin motivo, seed, pagar de nuevo, cifras intactas, `settled` en `GET transactions`, filtro `status=paid`) y comprobar que fallan
 - [x] 3.2 Commit: test(settlement): marcar como pagado y retirar el pago
-- [ ] 3.3 Implementar el servicio, el repositorio con guarda y auditoría (D3) y las rutas con su permiso; verificar con los tests de 3.1 y los de alcance y permiso (`401`, `403` antes del alcance, `404` idéntico, `400`)
-- [ ] 3.4 Escribir los tests de concurrencia con compuertas: dos `pay`, dos `unpay`; quitar la guarda `status = @from` los hace fallar, y se revierte
+- [x] 3.3 Implementar el servicio, el repositorio con guarda y auditoría (D3) y las rutas con su permiso; verificar con los tests de 3.1 y los de alcance y permiso (`401`, `403` antes del alcance, `404` idéntico, `400`)
+- [x] 3.4 Escribir los tests de concurrencia con compuertas: dos `pay`, dos `unpay`; quitar la guarda `status = @from` los hace fallar, y se revierte
 - [x] 3.5 Commit: feat(settlement): marcar como pagado y retirar el pago
 
 ## 4. Deshacer y reprocesar
 
-- [ ] 4.1 Escribir los tests de `reopenForBatch` filtrado por corrida vigente y devolviendo ids (D5) y comprobar que fallan; ajustar `settlement-missing.int.test.ts`
-- [ ] 4.2 Escribir los tests de integración de `undo`: datos conservados, import, faltantes, `RAM-07`, auditoría, corrida superada, `lastInvalidatedReview`, `run = null`, `validation_run_required`, `settlement_not_current`, fallo a mitad y undo de un batch del seed; comprobar que fallan
-- [ ] 4.3 Escribir los tests de reproceso: `next` con `reprocess`, número tomado por otro import, intento 2 de punta a punta contra `expected.json`, intento 3 y `undone` que no cuenta en `previousE`
+- [x] 4.1 Escribir los tests de `reopenForBatch` filtrado por corrida vigente y devolviendo ids (D5) y comprobar que fallan; ajustar `settlement-missing.int.test.ts`
+- [x] 4.2 Escribir los tests de integración de `undo`: datos conservados, import, faltantes, `RAM-07`, auditoría, corrida superada, `lastInvalidatedReview`, `run = null`, `validation_run_required`, `settlement_not_current`, fallo a mitad y undo de un batch del seed; comprobar que fallan
+- [x] 4.3 Escribir los tests de reproceso: `next` con `reprocess`, número tomado por otro import, intento 2 de punta a punta contra `expected.json`, intento 3 y `undone` que no cuenta en `previousE`
 - [x] 4.4 Commit: test(settlement): deshacer un intento y reprocesar
-- [ ] 4.5 Implementar `undo` (D4, D6) y la reapertura (D5), añadir `settlement_undone` a la invalidación y a su esquema, y añadir `processed → analyzed` y su guarda a `import-state.ts`; verificar con los tests de 4.1–4.3
-- [ ] 4.6 Fijar con un test el riesgo aceptado: faltante cubierto también por otro batch vigente vuelve a `persistent` (design, Risks)
-- [ ] 4.7 Escribir los tests de concurrencia con compuertas: `pay` y `undo` en los dos órdenes, dos `undo`, `undo` y `unpay`, `undo` y `process` del mismo número; y `settlement_busy` tras tres 1205, sin dejar nada
+- [x] 4.5 Implementar `undo` (D4, D6) y la reapertura (D5), añadir `settlement_undone` a la invalidación y a su esquema, y añadir `processed → analyzed` y su guarda a `import-state.ts`; verificar con los tests de 4.1–4.3
+- [x] 4.6 Fijar con un test el riesgo aceptado: faltante cubierto también por otro batch vigente vuelve a `persistent` (design, Risks)
+- [x] 4.7 Escribir los tests de concurrencia con compuertas: `pay` y `undo` en los dos órdenes, dos `undo`, `undo` y `unpay`, `undo` y `process` del mismo número; y `settlement_busy` tras tres 1205, sin dejar nada
 - [x] 4.8 Commit: feat(settlement): deshacer un intento y reprocesar con el mismo número
 
 ## 5. OpenAPI, cliente y colección Bruno
@@ -73,7 +73,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 ## 9. Verificación integrada
 
 - [ ] 9.1 `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde, anotando los conteos en este archivo
-- [ ] 9.2 **Con turno de base de la persona**: `! pnpm db:seed` y `! pnpm --filter @recon/backend test:integration`, con `batch-clean` contra `expected.json`
+- [x] 9.2 **Con turno de base de la persona**: `! pnpm db:seed` y `! pnpm --filter @recon/backend test:integration`, con `batch-clean` contra `expected.json`
 - [ ] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar
 - [ ] 9.4 Commit: test(settlement): verificación del ciclo de vida del intento
 

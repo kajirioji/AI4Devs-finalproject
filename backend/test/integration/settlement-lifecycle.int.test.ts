@@ -515,13 +515,15 @@ describe('undoing and reprocessing batch-clean', () => {
 describe('a seeded attempt, without a process audit nor a run', () => {
   it('can be undone: its import ends analyzed, and nothing is superseded', async () => {
     const seeded = await ctx.prisma.settlementBatch.findFirst({
-      where: { status: 'processed', account: { name: 'ProviderA-USD' }, import: { status: 'processed' } },
+      where: { status: 'paid', account: { name: 'ProviderA-USD' }, import: { status: 'processed' } },
       orderBy: { batchNo: 'desc' },
     })
-    const batchId = fixtureId(seeded?.batchId, 'a seeded processed batch')
+    const batchId = fixtureId(seeded?.batchId, 'a seeded paid batch')
     const before = await ctx.prisma.import.findUniqueOrThrow({ where: { importId: seeded!.importId } })
     expect(before.currentBatchId?.toLowerCase()).toBe(batchId.toLowerCase())
     try {
+      // The seed only writes paid batches: the payment goes first.
+      expect((await unpay(batchId, REASON)).statusCode).toBe(200)
       const res = await undo(batchId)
 
       expect(res.statusCode, res.body).toBe(200)
@@ -532,7 +534,9 @@ describe('a seeded attempt, without a process audit nor a run', () => {
       await ctx.prisma.settlementBatch.update({
         where: { batchId },
         data: {
-          status: 'processed',
+          status: 'paid',
+          paidAt: seeded!.paidAt,
+          paidByUserId: seeded!.paidByUserId,
           undoneAt: null,
           undoneByUserId: null,
           undoReason: null,
@@ -544,7 +548,11 @@ describe('a seeded attempt, without a process audit nor a run', () => {
         data: { status: before.status, currentBatchId: before.currentBatchId, updatedAt: before.updatedAt },
       })
       await ctx.prisma.auditLog.deleteMany({
-        where: { entityType: 'SettlementBatch', entityId: batchId.toLowerCase(), action: 'settlement.undo' },
+        where: {
+          entityType: 'SettlementBatch',
+          entityId: batchId.toLowerCase(),
+          action: { in: ['settlement.unpay', 'settlement.undo'] },
+        },
       })
     }
   })

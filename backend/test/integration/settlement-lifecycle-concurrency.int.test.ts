@@ -254,7 +254,7 @@ describe('undo and unpay of the same attempt', () => {
 })
 
 describe('undo while another import takes the number', () => {
-  it('the process waits for the lock of the number and creates attempt 2, with no trace of the undo in it', async () => {
+  it('the process waits for the undo and creates attempt 2, with no trace of the undo in it', async () => {
     const attempt = await processedAttempt()
     const id = ids[nextId++]!
     const bytes = buildXlsx({
@@ -271,39 +271,33 @@ describe('undo while another import takes the number', () => {
     const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [{ name: `n-${id}.xlsx`, bytes }])
     const runId = await flow.validateAndReview(detail.importId)
 
-    // The undo holds its locks right before its audit; the process gets to the lock of the number and waits there.
+    // The undo holds its locks right before its audit, without committing.
     const undoHolds = gate()
     const undoing = repository(undefined, async (phase) => {
       if (phase === 'audit') await undoHolds.beforeClaim()
     }).undo(undoCommand(attempt))
     await undoHolds.reached
-    let reachedNumber!: () => void
-    const atNumber = new Promise<void>((resolve) => {
-      reachedNumber = resolve
-    })
-    const processRepository = new PrismaSettlementRepository(ctx.prisma, {
-      missing: new PrismaMissingResolution(),
-      beforePhase: async (phase) => {
-        if (phase === 'number') reachedNumber()
-      },
-    })
-    let processed: Promise<{ batchId: string }> | undefined
-    try {
-      processed = processRepository.process({
+    // Where it waits depends on the plan (its reads of the provider's attempts already meet the undo's locks, or else the
+    // range lock of the number does): what counts is that it does not finish while the undo is open.
+    let finished = false
+    const processing = new PrismaSettlementRepository(ctx.prisma, { missing: new PrismaMissingResolution() })
+      .process({
         importId: detail.importId,
         userId: flow.userIds.analyst,
         request: { runId, batchNo: attempt.batchNo },
         prefilledFeeTypeIds: new Set(),
         now: new Date(),
       })
-      await atNumber
-      // Still in its lock: the attempt of the undo has not been committed.
-      expect(await ctx.prisma.settlementBatch.count({ where: { importId: detail.importId } })).toBe(0)
-    } finally {
-      undoHolds.open()
-    }
+      .finally(() => {
+        finished = true
+      })
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    const finishedDuringUndo = finished
+    undoHolds.open()
     await undoing
-    const { batchId } = await processed!
+    const { batchId } = await processing
+
+    expect(finishedDuringUndo).toBe(false)
 
     expect(await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId } })).toMatchObject({
       batchNo: attempt.batchNo,
