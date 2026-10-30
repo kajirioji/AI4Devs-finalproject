@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
 import { SETTLED_STATUS_TONE, TONE_NOTICE_CLASS, toneOf } from '@/lib/status-tone'
 import type { SettlementView } from './contract'
+import { SettlementActions } from './SettlementActions'
 import { strings } from './strings'
 
 const s = strings.summary
@@ -25,7 +26,10 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
 
   return (
     <section aria-label={s.title(view.batchNo)} className="flex flex-col gap-3">
-      <h1 className="text-2xl font-semibold">{s.title(view.batchNo)}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-2xl font-semibold">{s.title(view.batchNo)}</h1>
+        <SettlementActions view={view} />
+      </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-5">
         {items.map(([term, definition]) => (
           <div key={term} className="flex flex-col gap-0.5">

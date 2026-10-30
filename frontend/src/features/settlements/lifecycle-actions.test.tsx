@@ -9,6 +9,7 @@ import {
   seedAccountSettlements,
   seedMovements,
   seedSettlement,
+  seedSettlementView,
   settlementMovement,
   settlementRequests,
 } from '@/test/msw/settlements'
@@ -127,11 +128,14 @@ describe('Mark as paid', () => {
     await user.click(screen.getByRole('tab', { name: 'Movements' }))
 
     await waitFor(() => expect(settlementRequests('transactions').length).toBeGreaterThan(reads))
+    expect(await screen.findByRole('cell', { name: 'Settled' })).toBeInTheDocument()
   })
 
   it('shows the state of the API: the row of the list says Paid, without reloading', async () => {
     const { user, view, router } = await open('payments')
-    seedAccountSettlements(USD, [accountSettlement({ batchId: view.batchId, status: 'processed', batchNo: 123 })])
+    seedAccountSettlements(USD, [
+      accountSettlement({ batchId: view.batchId, status: 'processed', settledStatus: 'pending_payment', batchNo: 123 }),
+    ])
     await user.click(screen.getByRole('link', { name: strings.summary.backToList(view.accountName) }))
     const table = await screen.findByRole('table', { name: strings.list.tableLabel })
     expect(within(table).getByText('Processed · pending payment')).toBeInTheDocument()
@@ -256,23 +260,17 @@ describe('the errors of an action', () => {
   }
 
   it('someone else paid: says so, closes, reads the attempt again and Undo stays disabled', async () => {
-    const { user, view, queryClient } = await confirmUndo()
-    // What the API holds by now: read back after the 409.
-    seedSettlement(view.importId, { batchNo: 124 })
-    queryClient.setQueryDefaults(['never'], {})
-    respondNextSettlement('undo', {
-      status: 409,
-      code: 'settlement_payment_not_removed',
-      message: 'paid',
-      details: { status: 'paid' },
-    })
-    const reads = settlementRequests('get').length
+    const { user, view } = await confirmUndo()
+    // Payments marks it as paid while the dialog is open: the fake answers the 409 from the status it stores.
+    seedSettlementView({ ...view, ...PAID })
 
     await user.click(dialog().getByRole('button', { name: s.confirm }))
 
     expect(await screen.findByText(s.errors.paymentNotRemoved)).toBeInTheDocument()
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    await waitFor(() => expect(settlementRequests('get').length).toBeGreaterThan(reads))
+    expect(await screen.findByText('Paid')).toBeInTheDocument()
+    expect(action(s.undo)).toBeDisabled()
+    expect(action(s.undo)).toHaveAccessibleDescription(s.removePaymentFirst)
   })
 
   it.each(['settlement_not_processed', 'settlement_not_paid'])(

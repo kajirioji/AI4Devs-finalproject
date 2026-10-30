@@ -142,7 +142,7 @@ function Summary({ view }: { view: SettlementView }) {
 
 /**
  * Reconciliation › Settlement Summary of an attempt (design D1, D11): the 201 of Process seeded in the cache or, on
- * a reload, GET /settlements/{id}. Anyone in scope may read it; nothing on it writes.
+ * a reload, GET /settlements/{id}. Anyone in scope may read it; only the actions of its header write.
  */
 export function SettlementSummaryPage() {
   const { batchId } = useParams({ from: '/app/settlements/$batchId' })

@@ -32,7 +32,10 @@ export const feeTypesQuery = () =>
 
 export const settlementKey = (batchId: string) => ['settlements', batchId] as const
 
-/** An attempt: seeded by Process with its 201, so it is read only on a reload or a link (no action changes it yet). */
+/**
+ * An attempt: seeded by Process with its 201 and by the answer of pay, unpay and undo; read only on a reload, a link or
+ * after a 409 of its status (settlement-lifecycle design D10), so it does not go stale by itself.
+ */
 export const settlementQuery = (batchId: string) =>
   queryOptions({ queryKey: settlementKey(batchId), queryFn: () => getSettlement(batchId), staleTime: Infinity })
 
@@ -59,13 +62,16 @@ export const accountSettlementsQuery = (accountId: string, filters: AccountSettl
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === accountId ? previous : undefined),
   })
 
+/** The movements of an attempt, by cycle and page: their `settled` changes with pay, unpay and undo. */
+export const settlementTransactionsPrefix = (batchId: string) => [...settlementKey(batchId), 'transactions'] as const
+
 /**
- * A page of the movements of a cycle, with the page size of the API (50), under the attempt's key: an attempt as
- * written does not change until the payment actions of a later change, which will invalidate the whole attempt.
+ * A page of the movements of a cycle, with the page size of the API (50), under the attempt's key: they do not change
+ * until an action on the attempt, which marks them stale.
  */
 export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page: number) =>
   queryOptions({
-    queryKey: [...settlementKey(batchId), 'transactions', { cycle, page }] as const,
+    queryKey: [...settlementTransactionsPrefix(batchId), { cycle, page }] as const,
     queryFn: () => getSettlementTransactions(batchId, { type: cycle, page }),
     staleTime: Infinity,
     // The previous page stays while the next one of the same attempt and cycle loads, never the rows of another
@@ -77,10 +83,16 @@ export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page:
         : undefined,
   })
 
+/** The attempts of an import, newest first (GET /imports/{id}/settlements). */
+export const importSettlementsKey = (importId: string) => [...importKey(importId), 'settlements'] as const
+
+/** Every proposed number of the account: what undoing an attempt makes stale. */
+export const accountBatchNumbersPrefix = (accountId: string) => ['accounts', accountId, 'batch-number'] as const
+
 /** The proposed number is a proposal, not a reservation: always asked again when the screen opens. */
 export const nextBatchNumberQuery = (accountId: string, importId: string) =>
   queryOptions({
-    queryKey: ['accounts', accountId, 'batch-number', { importId }] as const,
+    queryKey: [...accountBatchNumbersPrefix(accountId), { importId }] as const,
     queryFn: () => getNextBatchNumber(accountId, importId),
     staleTime: 0,
   })
