@@ -149,6 +149,16 @@
 
 *Ajuste humano.* Ninguno todavía; el montaje del túnel se documentará paso a paso en la entrega de código.
 
+**Prompt 2:**
+
+*Contexto.* Issue #97: desplegar con URL pública. Change de OpenSpec `deploy-compose`, limitado a lo que vive en el repositorio; el túnel y el servidor se configuran a mano siguiendo la guía.
+
+*Prompt.* `/opsx:propose deploy-compose` con el alcance del issue (Dockerfiles, compose con túnel y red interna, migración y seed explícitos, plantilla de variables, CI de imágenes y `docs/deploy.md` en lenguaje llano), sin mencionar el nombre ni la ubicación del servidor. Después, `/opsx:apply` con un commit por grupo, parando en cada paso que necesita Docker.
+
+*Resultado.* Imágenes de API y web, `infra/docker-compose.deploy.yml` con overrides para depuración y SQL Server externo, identidad `recon_migrator` separada de `recon_app`, `scripts/deploy.sh`, job `images` en la CI y la guía. Con SQL Server en el compose por defecto, en lugar de la máquina dedicada del plan inicial.
+
+*Ajuste humano.* El autor revisó el gate de diseño y exigió tres cambios: el arreglo de `pnpm start` en su propio commit, la regla de rate limiting sobre el login como paso obligatorio con sus clics y la base en `feature/entrega-3-MVP`. Las pruebas que el autor ejecutó con Docker destaparon un fallo que los tests no veían: tras reiniciar sobre un volumen con datos, `mssql` moría con `Msg 904`. Se corrigió reintentando la inicialización, y de paso se evitó que un reinicio devolviera `db_ddladmin` a `recon_app`.
+
 ### **2.5. Seguridad**
 
 **Prompt 1:**

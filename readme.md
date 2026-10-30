@@ -33,7 +33,7 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 ### 0.4. URL del proyecto
 
-Sin despliegue público en la Entrega 2: la aplicación se ejecuta en local siguiendo [1.4](#14-instrucciones-de-instalación), con datos sintéticos. El despliegue descrito en [2.4](#24-infraestructura-y-despliegue) queda para la Entrega 3.
+La URL pública se añadirá aquí cuando el despliegue descrito en [2.4](#24-infraestructura-y-despliegue) esté en marcha. Mientras tanto, la aplicación se ejecuta en local siguiendo [1.4](#14-instrucciones-de-instalación), con datos sintéticos.
 
 **Vídeo de la demo.** Previsto para la Entrega 3: el flujo import → validaciones → settlement → descargas con datos sintéticos ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
@@ -221,6 +221,8 @@ Lo que el usuario ve en cada paso del flujo principal:
 [![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-2-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-2-MVP)
 
 Procedimiento de la Entrega 2, pensado para seguirse paso a paso en un clon limpio. Todos los datos son sintéticos: el seed crea el mundo de demostración y los archivos de prueba están en [`data/samples/`](data/samples/). Los comandos se ejecutan desde la raíz del repositorio; valen igual en PowerShell, Git Bash, macOS o Linux salvo donde se indica.
+
+Esta sección instala el entorno local. Para publicar la aplicación en un servidor, sigue la [guía de despliegue](docs/deploy.md).
 
 **1. Requisitos**
 
@@ -545,36 +547,38 @@ Cada módulo del backend sigue la misma división interna: `domain/` (entidades,
 
 ### 2.4. Infraestructura y despliegue
 
-> **Estado en la Entrega 2: solo entorno local.** La aplicación se ejecuta con Docker Compose (SQL Server) y `pnpm dev` siguiendo [1.4](#14-instrucciones-de-instalación); la CI de GitHub Actions ya corre en cada pull request. El entorno de demostración con URL pública que sigue (servidor propio con Docker y túnel, solo con datos sintéticos) es el plan para la Entrega 3 y no está implementado.
+> **Estado.** El repositorio incluye todo lo necesario para desplegar con Docker Compose y Cloudflare Tunnel, con datos sintéticos; el procedimiento está en la [guía de despliegue](docs/deploy.md). La URL pública se añadirá en [0.4](#04-url-del-proyecto) cuando exista. El despliegue automático y los backups programados no están implementados.
 
 **Entornos.**
 
 | Entorno | Dónde | Base de datos | Para qué |
 |---|---|---|---|
 | Local (autor y TA) | Docker Compose en el portátil | SQL Server 2022 en contenedor | Desarrollo, tests, revisión de la entrega |
-| Demostración (URL pública) | Servidor propio: host Docker para la aplicación + máquina dedicada para SQL Server | SQL Server 2022 en máquina dedicada | Entorno persistente y URL pública para las Entregas 2 y 3 |
+| Demostración (URL pública) | Servidor con Docker Compose | SQL Server 2022 en contenedor, con volumen propio; admite un SQL Server externo sin cambiar código | Entorno persistente y URL pública |
 | Producción (futuro, fuera del alcance del máster) | Infraestructura de la compañía | SQL Server existente | Destino final; el esquema y el ORM no cambian |
 
 ```mermaid
 flowchart LR
     U[TA / usuario] -->|HTTPS| T[Túnel público<br/>Cloudflare Tunnel]
-    subgraph Servidor["Servidor propio"]
-        subgraph D01["Host Docker · Docker Compose"]
+    subgraph Servidor["Servidor · Docker Compose"]
+        C[cloudflared<br/>único con salida a internet]
+        subgraph Interna["Red interna, sin puertos publicados"]
             W[web · Nginx<br/>sirve la SPA y hace proxy de /api]
-            P[api · Node 22<br/>contenedor de la API]
+            P[api · Node 22<br/>usuario recon_app, sin DDL]
+            S[(mssql · SQL Server 2022<br/>con volumen propio)]
+            M[migrate y seed · bajo orden explícita<br/>usuario recon_migrator]
             W --> P
+            P --> S
+            M --> S
         end
-        S[(SQL Server 2022<br/>máquina dedicada)]
-        P -->|1433, red interna| S
-        BK[Backups programados<br/>de la BD]
-        S --> BK
+        C --> W
     end
-    T --> W
+    C -->|conexión saliente| T
 ```
 
-**Proceso de despliegue previsto (Entrega 3).** Primero manual y reproducible: `git pull` en el host Docker, `docker compose build` y `docker compose up -d`, con las migraciones ejecutadas como paso separado del despliegue, mediante una identidad distinta de la aplicación. Después, automatizado con GitHub Actions: el build de las imágenes y el despliegue al servidor se disparan desde el runner sobre el túnel. La parte de integración continua ya existe desde la Entrega 2: en cada pull request, lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, y gitleaks. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
+**Proceso de despliegue.** Es manual y reproducible con `scripts/deploy.sh`: `git pull`, `build`, `migrate` y `up`. Las migraciones son un paso separado del arranque, con la identidad `recon_migrator`; en el despliegue, `recon_app` no puede cambiar el esquema. La integración continua corre en cada pull request: lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, gitleaks y build de las imágenes de despliegue, sin publicarlas. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
 
-**Configuración.** Toda la configuración va por variables de entorno (`.env.example` versionado, `.env` no). Secretos del servidor fuera del repositorio.
+**Configuración.** Toda la configuración va por variables de entorno. En local, `.env.example` versionado y `.env` no; en el despliegue, `infra/.env.deploy.example` versionado e `infra/.env.deploy` no. Cada contenedor recibe solo las variables que necesita.
 
 ### 2.5. Seguridad
 

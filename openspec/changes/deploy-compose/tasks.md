@@ -47,10 +47,10 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 ## 6. Documentación
 
 - [ ] 6.1 Escribir `docs/deploy.md` en lenguaje llano: qué es cada pieza (contenedor, compose, túnel, volumen, migración), instalar Docker, clonar, crear `.env.deploy`, crear el túnel en Cloudflare Zero Trust y copiar el token, `up`, migrar, sembrar, comprobar, actualizar, y qué hacer si algo falla. Verificar: cada orden se ha ejecutado tal como está escrita en la prueba local, salvo las del panel de Cloudflare, marcadas como pendientes de contrastar en el servidor
-- [ ] 6.2 Incluir en `docs/deploy.md`: SQL Server externo, puertos de depuración, límites de Cloudflare, aviso de qué órdenes borran datos y, como **paso obligatorio del procedimiento y con sus clics**, la regla de rate limiting en Cloudflare sobre `/api/v1/auth/login`. Verificar por lectura contra los escenarios de la spec
-- [ ] 6.3 Actualizar README: §1.4 enlaza la guía; §2.4 describe el estado real (SQL Server en el compose por defecto, identidad de migración, sin el identificador `D01`); §0.4 indica que la URL se añadirá cuando exista. Verificar con una búsqueda: sin nombre ni ubicación del servidor
-- [ ] 6.4 En `CLAUDE.md`: añadir la línea de `scripts/deploy.sh` a Comandos y cambiar la regla 3 de "Cómo trabajamos" a `feature/entrega-3-MVP`. Registrar el change en `prompts.md`. Verificar por lectura
-- [ ] 6.5 Commit: `docs(deploy): guía de despliegue y estado real en el README`
+- [x] 6.2 Incluir en `docs/deploy.md`: SQL Server externo, puertos de depuración, límites de Cloudflare, aviso de qué órdenes borran datos y, como **paso obligatorio del procedimiento y con sus clics**, la regla de rate limiting en Cloudflare sobre `/api/v1/auth/login`. Verificar por lectura contra los escenarios de la spec
+- [x] 6.3 Actualizar README: §1.4 enlaza la guía; §2.4 describe el estado real (SQL Server en el compose por defecto, identidad de migración, sin el identificador `D01`); §0.4 indica que la URL se añadirá cuando exista. Verificar con una búsqueda: sin nombre ni ubicación del servidor
+- [x] 6.4 En `CLAUDE.md`: añadir la línea de `scripts/deploy.sh` a Comandos y cambiar la regla 3 de "Cómo trabajamos" a `feature/entrega-3-MVP`. Registrar el change en `prompts.md`. Verificar por lectura
+- [x] 6.5 Commit: `docs(deploy): guía de despliegue y estado real en el README`
 
 ## 7. Comprobación integrada en local
 
