@@ -33,10 +33,10 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 ## 4. Operación con `scripts/deploy.sh`
 
-- [ ] 4.1 Crear `scripts/deploy.sh` (design D9), con fin de línea LF y permiso de ejecución. Verificar: sin `infra/.env.deploy` termina con un mensaje claro; `up` con `TUNNEL_TOKEN` vacío se niega salvo con `DEPLOY_DEBUG=1`; una orden desconocida muestra la ayuda
-- [ ] 4.2 Verificar que `seed` sin escribir la confirmación no hace nada. La persona ejecuta `! DEPLOY_DEBUG=1 scripts/deploy.sh seed`, confirma y comprueba que termina bien y que el login con `analyst` funciona en `127.0.0.1:8080`
-- [ ] 4.3 Verificar `up` con una migración pendiente simulada contra una base vacía: `up` no la aplica; la persona ejecuta `! DEPLOY_DEBUG=1 scripts/deploy.sh migrate` y una segunda ejecución no cambia nada
-- [ ] 4.4 Commit: `feat(infra): script de operación del despliegue`
+- [x] 4.1 Crear `scripts/deploy.sh` (design D9), con fin de línea LF y permiso de ejecución. Verificar: sin `infra/.env.deploy` termina con un mensaje claro; `up` con `TUNNEL_TOKEN` vacío se niega salvo con `DEPLOY_DEBUG=1`; una orden desconocida muestra la ayuda
+- [x] 4.2 Verificar que `seed` sin escribir la confirmación no hace nada. La persona ejecuta `! DEPLOY_DEBUG=1 scripts/deploy.sh seed`, confirma y comprueba que termina bien y que el login con `analyst` funciona en `127.0.0.1:8080`
+- [x] 4.3 Verificar `up` con una migración pendiente simulada contra una base vacía: `up` no la aplica; la persona ejecuta `! DEPLOY_DEBUG=1 scripts/deploy.sh migrate` y una segunda ejecución no cambia nada
+- [x] 4.4 Commit: `feat(infra): script de operación del despliegue`
 
 ## 5. CI
 
