@@ -1,0 +1,12 @@
+# Local test without a tunnel: the web answers on http://127.0.0.1:8080 only.
+# An internal network cannot publish ports, so web also joins the egress network here.
+services:
+  web:
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - recon-internal
+      - recon-egress
+
+  cloudflared:
+    profiles: [disabled]

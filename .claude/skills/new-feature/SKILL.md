@@ -14,7 +14,7 @@ escribir código; no inventes reglas de negocio.
 2. **Proposal.** Ejecuta `/opsx:propose <nombre-kebab>`. El proposal debe citar las secciones
    del README que implementa, listar los archivos que tocará y los `expected.json` de
    `data/samples/` que servirán de oráculo. Para y espera la aprobación humana.
-3. **Rama.** `git checkout -b feat/<modulo>-<tema>` desde `feature/entrega-2-MVP`.
+3. **Rama.** `git checkout -b feat/<modulo>-<tema>` desde `feature/entrega-3-MVP`.
 4. **Tests primero.** Escribe los tests de dominio (Vitest) que fallan. Ejecútalos y confirma
    que fallan por la razón correcta. Solo entonces `/opsx:apply`.
 5. **Implementa** en el módulo hexagonal correspondiente: dominio puro sin Prisma; casos de uso
@@ -22,6 +22,6 @@ escribir código; no inventes reglas de negocio.
    API y `Decimal` en el dominio.
 6. **Verifica.** `pnpm lint && pnpm typecheck && pnpm test`. Luego `/opsx:verify` y resuelve
    los warnings (corrigiendo código o actualizando la spec, nunca ignorándolos).
-7. **PR.** Commit convencional, `gh pr create` hacia `feature/entrega-2-MVP` con la plantilla
+7. **PR.** Commit convencional, `gh pr create` hacia `feature/entrega-3-MVP` con la plantilla
    del repo. No hagas merge: lo hace K tras el review.
 8. **Archiva** con `/opsx:archive` solo después del merge.

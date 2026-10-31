@@ -1,0 +1,131 @@
+# Recon Tool 2.0 — deployment behind a Cloudflare tunnel. Procedure: docs/deploy.md.
+#   scripts/deploy.sh up
+# No service publishes ports: the tunnel is the only way in. Only cloudflared reaches the internet.
+# Each service receives only the variables it needs, from infra/.env.deploy (--env-file).
+name: recon-deploy
+
+x-ops: &ops
+  build:
+    context: ..
+    dockerfile: backend/Dockerfile
+    target: ops
+  image: recon-ops
+  profiles: [ops]
+  depends_on:
+    mssql:
+      condition: service_healthy
+  networks:
+    - recon-internal
+
+# Schema changes and the seed use their own identity, never recon_app.
+x-ops-env: &ops-env
+  DB_HOST: ${DB_HOST:-mssql}
+  DB_PORT: ${DB_PORT:-1433}
+  DB_NAME: ${DB_NAME:-ReconTool}
+  DB_USER: recon_migrator
+  RECON_APP_PASSWORD: ${RECON_MIGRATOR_PASSWORD:?set RECON_MIGRATOR_PASSWORD in infra/.env.deploy}
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in infra/.env.deploy}
+      MSSQL_COLLATION: Latin1_General_100_CI_AS_SC
+      DB_NAME: ${DB_NAME:-ReconTool}
+      RECON_APP_PASSWORD: ${RECON_APP_PASSWORD:?set RECON_APP_PASSWORD in infra/.env.deploy}
+      RECON_MIGRATOR_PASSWORD: ${RECON_MIGRATOR_PASSWORD:?set RECON_MIGRATOR_PASSWORD in infra/.env.deploy}
+    volumes:
+      - recon-mssql-data:/var/opt/mssql
+      - ./mssql/init.sql:/init/init.sql:ro
+      - ./mssql/init.deploy.sql:/init/init.deploy.sql:ro
+      - ./mssql/entrypoint.sh:/init/entrypoint.sh:ro
+    # SELECT 1 would pass before the init scripts finish: wait for the last object they create.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -o /dev/null -Q \"IF NOT EXISTS (SELECT 1 FROM [$$DB_NAME].sys.database_principals WHERE name = 'recon_migrator') RAISERROR('not ready', 16, 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    command: ["/bin/bash", "/init/entrypoint.sh"]
+    networks:
+      - recon-internal
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      target: runtime
+    image: recon-api
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in infra/.env.deploy}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_HOST: ${DB_HOST:-mssql}
+      DB_PORT: ${DB_PORT:-1433}
+      DB_NAME: ${DB_NAME:-ReconTool}
+      DB_USER: recon_app
+      RECON_APP_PASSWORD: ${RECON_APP_PASSWORD:?set RECON_APP_PASSWORD in infra/.env.deploy}
+    volumes:
+      - recon-uploads:/data/uploads
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - recon-internal
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    image: recon-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - recon-internal
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.3
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:2000", "run"]
+    environment:
+      # May be empty so that the debug mode needs no token; scripts/deploy.sh refuses it otherwise.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - recon-internal
+      - recon-egress
+
+  # One-shot commands: `up` never starts them (see scripts/deploy.sh).
+  migrate:
+    <<: *ops
+    environment:
+      <<: *ops-env
+
+  seed:
+    <<: *ops
+    command: ["node_modules/.bin/tsx", "prisma/seed.ts"]
+    environment:
+      <<: *ops-env
+      SEED_PASSWORD: ${SEED_PASSWORD:?set SEED_PASSWORD in infra/.env.deploy}
+
+networks:
+  recon-internal:
+    internal: true
+  recon-egress:
+
+volumes:
+  recon-mssql-data:
+  recon-uploads:

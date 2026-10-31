@@ -4,6 +4,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.deploy.example
 backend/src/generated/
 data/uploads/
 backend/data/uploads/

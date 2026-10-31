@@ -34,14 +34,15 @@ de programar.
 
 1. **Una feature = un change de OpenSpec** (`/opsx:propose` → revisión humana → `/opsx:apply` → `/opsx:verify` → `/opsx:archive`). Sin proposal aprobado no se escribe código de feature.
 2. **TDD en el dominio**: validaciones, motor de pareo, cálculo de fees y summary se escriben test-first con Vitest, usando `data/samples/*/expected.json` como oráculo. Rompe el test a propósito una vez para comprobar que falla.
-3. **Rama por feature** (`feat/<modulo>-<tema>`), PR hacia `feature/entrega-2-MVP` con la plantilla; CI verde obligatorio.
+3. **Rama por feature** (`feat/<modulo>-<tema>`), PR hacia `feature/entrega-3-MVP` con la plantilla; CI verde obligatorio.
 4. **Sesión nueva por paso** (explorar → planificar → ejecutar). Antes de tocar el esquema o una migración, para y pide confirmación.
-5. **Nunca**: datos reales o identificadores reales (todo es sintético), `prisma migrate reset` o `deploy` contra una base que no sea la local, `prisma db push` ni `prisma migrate dev` (el índice único filtrado `UX_ValidationRun_current_import`, los demás índices filtrados y las `CHECK` viven solo en las migraciones escritas a mano: generarlas desde `schema.prisma` los perdería), secretos en el repo, `console.log` en código de producción (usa el logger de Fastify), `any` sin justificación en el PR.
+5. **Nunca**: datos reales o identificadores reales (todo es sintético), `prisma migrate reset` contra una base que no sea la local, `prisma migrate deploy` contra una base que no sea la local salvo con `scripts/deploy.sh migrate` ejecutado por la persona, `prisma db push` ni `prisma migrate dev` (el índice único filtrado `UX_ValidationRun_current_import`, los demás índices filtrados y las `CHECK` viven solo en las migraciones escritas a mano: generarlas desde `schema.prisma` los perdería), secretos en el repo, `console.log` en código de producción (usa el logger de Fastify), `any` sin justificación en el PR.
 
 ## Comandos
 
 - `pnpm db:up` · `pnpm db:migrate` · `pnpm db:seed` (idempotente; recrea todo el mundo sintético)
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test`
+- `scripts/deploy.sh build | up | migrate | seed | logs | ps | down`: despliegue con Docker Compose y túnel (`docs/deploy.md`)
 - `pnpm samples:plan && python data/samples/build-samples.py` regenera los archivos de muestra
 - `pnpm test:api` (colección completa) · `pnpm test:api:smoke` (solo `10-smoke`): colección Bruno contra el backend local
 

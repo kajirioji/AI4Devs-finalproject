@@ -5,7 +5,7 @@ description: Revisa un diff o PR de Recon Tool 2.0 con los cinco focos acordados
 
 # Revisión de diff
 
-Revisa `git diff feature/entrega-2-MVP...HEAD` (o el PR indicado) y responde con hallazgos
+Revisa `git diff feature/entrega-3-MVP...HEAD` (o el PR indicado) y responde con hallazgos
 concretos (archivo:línea → problema → propuesta), ordenados por severidad. Sin elogios.
 
 Cinco focos, en este orden:
