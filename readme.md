@@ -33,7 +33,7 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 ### 0.4. URL del proyecto
 
-La URL pública se añadirá aquí cuando el despliegue descrito en [2.4](#24-infraestructura-y-despliegue) esté en marcha. Mientras tanto, la aplicación se ejecuta en local siguiendo [1.4](#14-instrucciones-de-instalación), con datos sintéticos.
+La aplicación está publicada en <https://recon.aperit.io/>, con datos sintéticos y el despliegue descrito en [2.4](#24-infraestructura-y-despliegue). También se puede ejecutar en local siguiendo [1.4](#14-instrucciones-de-instalación).
 
 **Vídeo de la demo.** Previsto para la Entrega 3: el flujo import → validaciones → settlement → descargas con datos sintéticos ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
@@ -547,7 +547,7 @@ Cada módulo del backend sigue la misma división interna: `domain/` (entidades,
 
 ### 2.4. Infraestructura y despliegue
 
-> **Estado.** El repositorio incluye todo lo necesario para desplegar con Docker Compose y Cloudflare Tunnel, con datos sintéticos; el procedimiento está en la [guía de despliegue](docs/deploy.md). La URL pública se añadirá en [0.4](#04-url-del-proyecto) cuando exista. El despliegue automático y los backups programados no están implementados.
+> **Estado.** El repositorio incluye todo lo necesario para desplegar con Docker Compose y Cloudflare Tunnel, con datos sintéticos; el procedimiento está en la [guía de despliegue](docs/deploy.md). La URL pública está en [0.4](#04-url-del-proyecto). El despliegue automático y los backups programados no están implementados.
 
 **Entornos.**
 
