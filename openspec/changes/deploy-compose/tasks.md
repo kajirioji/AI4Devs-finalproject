@@ -46,7 +46,7 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 ## 6. Documentación
 
-- [ ] 6.1 Escribir `docs/deploy.md` en lenguaje llano: qué es cada pieza (contenedor, compose, túnel, volumen, migración), instalar Docker, clonar, crear `.env.deploy`, crear el túnel en Cloudflare Zero Trust y copiar el token, `up`, migrar, sembrar, comprobar, actualizar, y qué hacer si algo falla. Verificar: cada orden se ha ejecutado tal como está escrita en la prueba local, salvo las del panel de Cloudflare, marcadas como pendientes de contrastar en el servidor
+- [x] 6.1 Escribir `docs/deploy.md` en lenguaje llano: qué es cada pieza (contenedor, compose, túnel, volumen, migración), instalar Docker, clonar, crear `.env.deploy`, crear el túnel en Cloudflare Zero Trust y copiar el token, `up`, migrar, sembrar, comprobar, actualizar, y qué hacer si algo falla. Verificar: cada orden se ha ejecutado tal como está escrita en la prueba local, salvo las del panel de Cloudflare, marcadas como pendientes de contrastar en el servidor
 - [x] 6.2 Incluir en `docs/deploy.md`: SQL Server externo, puertos de depuración, límites de Cloudflare, aviso de qué órdenes borran datos y, como **paso obligatorio del procedimiento y con sus clics**, la regla de rate limiting en Cloudflare sobre `/api/v1/auth/login`. Verificar por lectura contra los escenarios de la spec
 - [x] 6.3 Actualizar README: §1.4 enlaza la guía; §2.4 describe el estado real (SQL Server en el compose por defecto, identidad de migración, sin el identificador `D01`); §0.4 indica que la URL se añadirá cuando exista. Verificar con una búsqueda: sin nombre ni ubicación del servidor
 - [x] 6.4 En `CLAUDE.md`: añadir la línea de `scripts/deploy.sh` a Comandos y cambiar la regla 3 de "Cómo trabajamos" a `feature/entrega-3-MVP`. Registrar el change en `prompts.md`. Verificar por lectura
@@ -54,11 +54,11 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 ## 7. Comprobación integrada en local
 
-- [ ] 7.1 Desde cero (volúmenes nuevos), seguir `docs/deploy.md` en modo de depuración. Verificar: todos los servicios `healthy` y el README sin pasos que falten
-- [ ] 7.2 Hacer en el navegador, en `127.0.0.1:8080`, el recorrido import → validaciones → settlement → descargas con `data/samples/batch-clean`, con la API como `recon_app` sin DDL. Verificar: el recorrido termina y la consola no muestra violaciones de CSP
-- [ ] 7.3 Con ese import creado, ejecutar la actualización (`build`, `migrate`, `up`). Verificar: el import y sus archivos siguen disponibles
-- [ ] 7.4 Verificar en verde `pnpm lint`, `pnpm typecheck`, `pnpm test` y `git status` sin `.env.deploy`
-- [ ] 7.5 Commit: `chore(infra): ajustes de la prueba integrada del despliegue` (solo si la prueba deja cambios)
+- [x] 7.1 Desde cero (volúmenes nuevos), seguir `docs/deploy.md` en modo de depuración. Verificar: todos los servicios `healthy` y el README sin pasos que falten
+- [x] 7.2 Hacer en el navegador, en `127.0.0.1:8080`, el recorrido import → validaciones → settlement → descargas con `data/samples/batch-clean`, con la API como `recon_app` sin DDL. Verificar: el recorrido termina y la consola no muestra violaciones de CSP
+- [x] 7.3 Con ese import creado, ejecutar la actualización (`build`, `migrate`, `up`). Verificar: el import y sus archivos siguen disponibles
+- [x] 7.4 Verificar en verde `pnpm lint`, `pnpm typecheck`, `pnpm test` y `git status` sin `.env.deploy`
+- [x] 7.5 Commit: `chore(infra): ajustes de la prueba integrada del despliegue` (solo si la prueba deja cambios)
 
 ## Workflow follow-up
 

@@ -139,7 +139,7 @@ Comprueba el estado de salud sustituyendo el dominio por el tuyo:
 curl https://recon.example.com/api/v1/health
 ```
 
-Debe responder `{"status":"ok","db":"ok"}`. Después abre la URL en un navegador y entra con el usuario `analyst` y el valor de `SEED_PASSWORD`. Repite la prueba desde un dispositivo fuera de la red local, por ejemplo un móvil con datos.
+Debe responder `{"status":"ok","db":"ok"}`. Después abre la URL en un navegador y entra con el usuario `analyst` y el valor de `SEED_PASSWORD` de `infra/.env.deploy`. No sirve la contraseña de un entorno local: el despliegue no lee el `.env` de la raíz. Si cambias `SEED_PASSWORD`, no surte efecto hasta volver a sembrar. Repite la prueba desde un dispositivo fuera de la red local, por ejemplo un móvil con datos.
 
 ## 10. Limitar los intentos de login (obligatorio)
 
