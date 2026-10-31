@@ -65,17 +65,20 @@ async function openAttempt(page: Page) {
   }
   await link.click()
   await expect(page.getByRole('heading', { name: 'Settlement Summary · batch 123' })).toBeVisible()
+  // The list arrives after the heading and pushes the page down: a capture before it would be cut short.
+  await expect(page.getByRole('region', { name: 'Attempts of this import' })).toBeVisible()
 }
 
-async function shot(page: Page, name: string) {
-  await page.screenshot({ path: `${OUT}${name}.png`, fullPage: true })
+/** A dialog only veils the viewport, so its capture stays within it. */
+async function shot(page: Page, name: string, fullPage = true) {
+  await page.screenshot({ path: `${OUT}${name}.png`, fullPage })
   console.log(`saved docs/wireframes/settlement-lifecycle/${name}.png`)
 }
 
 async function withReason(page: Page, reason: string, name: string) {
   const dialog = page.getByRole('alertdialog')
   await dialog.getByLabel('Reason').fill(reason)
-  await shot(page, name)
+  await shot(page, name, false)
   await dialog.getByRole('button', { name: 'Confirm' }).click()
   await expect(dialog).toBeHidden()
 }

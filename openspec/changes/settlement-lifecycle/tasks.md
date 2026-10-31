@@ -42,7 +42,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 - [x] 5.1 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; ampliar `app.test.ts` con las tres rutas; verificar `openapi:check`
 - [x] 5.2 Añadir `00-auth/Login as payments`, `as: payments` en `collection.bru` y `SEED_PAYMENTS_USER` en `.env.example`; la persona copia la variable a su `api-collection/.env`, que no se lee ni se versiona
-- [ ] 5.3 Añadir a `10-smoke` los negativos `403` (`viewer`, `analyst` en `pay`/`unpay`, `payments` en `undo`), `404` y `400`, y verificar con `pnpm test:api:smoke`
+- [x] 5.3 Añadir a `10-smoke` los negativos `403` (`viewer`, `analyst` en `pay`/`unpay`, `payments` en `undo`), `404` y `400`, y verificar con `pnpm test:api:smoke` (verificado con `pnpm test:api`, que incluye `10-smoke`)
 - [x] 5.4 Ampliar `20-flows/settlements/batch-clean` con el recorrido del escenario "Flujo de punta a punta"; a mano, sin reimportar. Lo ejecuta la persona con `! pnpm db:seed` y `! pnpm test:api`, con `pnpm dev` levantado
 - [x] 5.5 Commit: feat(api): pagar, retirar el pago y deshacer en OpenAPI y en la colección
 
@@ -72,10 +72,13 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 ## 9. Verificación integrada
 
-- [ ] 9.1 `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde, anotando los conteos en este archivo
+- [x] 9.1 `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde, anotando los conteos en este archivo
+  - `pnpm typecheck`: sin errores.
+  - `pnpm test`: shared 203; backend 1076 y 3 omitidos; frontend 602. Con la raíz en paralelo y `pnpm dev` levantado es intermitente: de dos pasadas, una en verde y otra con 2 fallos en el backend (`src/app.test.ts`, `src/openapi/export-openapi.test.ts`). El backend solo pasó 3 de 3 veces.
+  - `pnpm lint`: un único error, de formato, en `.claude/settings.local.json`, archivo local ignorado por git y fuera del repositorio.
 - [x] 9.2 **Con turno de base de la persona**: `! pnpm db:seed` y `! pnpm --filter @recon/backend test:integration`, con `batch-clean` contra `expected.json`
-- [ ] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar
-- [ ] 9.4 Commit: test(settlement): verificación del ciclo de vida del intento
+- [x] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar (colección: 176 de 176 peticiones y 186 de 186 tests)
+- [x] 9.4 Commit: test(settlement): verificación del ciclo de vida del intento
 
 ## Workflow follow-up
 
