@@ -78,9 +78,9 @@ Deshacer SHALL, en una sola transacción con el cambio de estado: devolver el im
 - **THEN** `RAM-07` sigue en ProviderA-USD como principal, con su `assignedInBatchId`, y no se escribe `account_channel.assign`
 
 #### Scenario: Fallo a mitad
-- **GIVEN** un undo que falla al reabrir los faltantes
+- **GIVEN** un undo que falla después de reabrir los faltantes y superar la corrida
 - **WHEN** termina
-- **THEN** el intento sigue `processed`, el import `processed` con su `currentBatchId`, la corrida vigente y sin auditoría `settlement.undo`
+- **THEN** el intento sigue `processed`, el import `processed` con su `currentBatchId`, la corrida vigente, los faltantes `resolved` y sin auditoría `settlement.undo`
 
 #### Scenario: Un intento deshecho no cuenta como anterior
 - **GIVEN** un intento `undone`
@@ -93,11 +93,11 @@ Deshacer SHALL, en una sola transacción con el cambio de estado: devolver el im
 - **THEN** responde `409 settlement_not_current` y no escribe nada
 
 ### Requirement: Alcance y permisos de las acciones del intento
-`pay`, `unpay` y `undo` SHALL responder `401 unauthorized` sin token, `403 forbidden` sin su permiso (antes de mirar el alcance), `400 validation_error` con un id que no es UUID, y el mismo `404 not_found` (`"Settlement not found"`) para un intento inexistente o de un merchant fuera del alcance.
+`pay`, `unpay` y `undo` SHALL responder `401 unauthorized` sin token, `403 forbidden` sin su permiso (antes de mirar el alcance), `400 validation_error` con un id que no es UUID, y el mismo `404 not_found` (`"Settlement not found"`) para un intento inexistente o de un merchant fuera del alcance. El id y el cuerpo SHALL validarse antes que la autenticación y el permiso, como en el resto del API: una petición inválida responde `400` sea quien sea quien la envía.
 
 #### Scenario: Sin permiso
 - **WHEN** `viewer` llama a cualquiera de las tres, `analyst` a `pay` o `unpay`, o `payments` a `undo`
-- **THEN** recibe `403` con `code = "forbidden"`, aunque el intento no exista
+- **THEN** con un cuerpo válido recibe `403` con `code = "forbidden"`, aunque el intento no exista
 
 #### Scenario: Fuera del alcance
 - **GIVEN** un usuario con el permiso y solo el merchant 1
@@ -119,9 +119,14 @@ Cada acción SHALL decidir su transición con una guarda dentro de su transacci�
 - **AND** en el orden inverso, el `pay` responde `409 settlement_not_processed` con `details.status = "undone"`
 
 #### Scenario: Deshacer mientras otro import toma el número
-- **GIVEN** un `undo` del batch 118 sin confirmar y un proceso de otro import de la cuenta con `batchNo = 118` esperando el bloqueo del número
+- **GIVEN** un `undo` del batch 118 sin confirmar y un proceso de otro import de la cuenta con `batchNo = 118` esperando a que el `undo` confirme, en sus lecturas de los intentos o en el bloqueo del número
 - **WHEN** el `undo` confirma
 - **THEN** el proceso crea el intento 2 del batch 118, y el `undo` no ha dejado rastro en él
+
+#### Scenario: Ida y vuelta entre la guarda y la lectura
+- **GIVEN** una acción cuya guarda no escribió nada y un intento que, al releerlo, admite esa acción porque otra lo cambió y otra lo devolvió
+- **WHEN** termina
+- **THEN** responde `409 settlement_busy` y no escribe nada
 
 #### Scenario: Víctima de un interbloqueo
 - **GIVEN** un `undo` que SQL Server elige como víctima tres veces seguidas

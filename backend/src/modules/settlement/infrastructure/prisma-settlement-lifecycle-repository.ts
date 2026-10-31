@@ -7,7 +7,7 @@ import { NotFoundError } from '../../../shared/errors.js'
 import { UNDO_ATTEMPT_MOVE } from '../../imports/domain/import-state.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
 import { recordInvalidation, reviewIsValid } from '../../validation/infrastructure/review-events.js'
-import { SettlementNotCurrentError, transitionErrorOf } from '../application/errors.js'
+import { SettlementBusyError, SettlementNotCurrentError, transitionErrorOf } from '../application/errors.js'
 import type {
   LifecycleCommand,
   ReasonCommand,
@@ -114,7 +114,7 @@ export class PrismaSettlementLifecycleRepository implements SettlementLifecycleR
           [undoReason] = ${reason}, [updatedAt] = CAST(${now.toISOString()} AS datetime2(7))
         OUTPUT LOWER(CONVERT(VARCHAR(36), inserted.[importId])) AS importId, inserted.[batchNo], inserted.[attemptNo]
         WHERE [batchId] = ${batchId} AND [status] = ${from}`
-      if (claimed === undefined) return this.rejectUndo(tx, batchId, importId)
+      if (claimed === undefined) return this.reject(tx, batchId, 'undo')
 
       await this.options.beforePhase?.('missing')
       const reopenedMissingIssueIds = await this.options.missing.reopenForBatch(tx, batchId)
@@ -145,7 +145,7 @@ export class PrismaSettlementLifecycleRepository implements SettlementLifecycleR
     return runId
   }
 
-  /** A guard of undo wrote nothing: an attempt that admits it, yet is not the current one of its import, is defensive. */
+  /** The guard of the import wrote nothing: an attempt that admits undo, yet is not the current one, is defensive. */
   private async rejectUndo(tx: Tx, batchId: string, importId: string): Promise<never> {
     const batch = await tx.settlementBatch.findUnique({ where: { batchId }, select: { status: true } })
     if (batch === null) throw new NotFoundError('Settlement')
@@ -178,8 +178,8 @@ export class PrismaSettlementLifecycleRepository implements SettlementLifecycleR
     const status = BatchStatus.parse(batch.status)
     const transition = transitionOf(status, action)
     if (!transition.ok) throw transitionErrorOf(transition.error, status)
-    // The status admits the action, yet the guard found nothing: only an attempt deleted and restored could get here.
-    throw new NotFoundError('Settlement')
+    // The status admits the action, yet the guard found nothing: another action went and came back in between.
+    throw new SettlementBusyError()
   }
 
   private async audit(

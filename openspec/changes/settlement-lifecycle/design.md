@@ -71,7 +71,7 @@ Mismo orden que procesar (D7 de `settlement-process`): `Import` → `SettlementB
 6. Superar la corrida vigente del import (D6).
 7. Auditoría `settlement.undo`.
 
-Un `pay` solapado solo bloquea `SettlementBatch` y no pide nada más, así que no hay ciclo con `undo`. Con `undo` y `process` de otro import, el `lockNumber` del segundo (`UPDLOCK, HOLDLOCK`) espera al commit y entonces ve `undone`: toma el intento siguiente (escenario de la spec).
+Un `pay` solapado solo bloquea `SettlementBatch` y no pide nada más, así que no hay ciclo con `undo`. Con `undo` y `process` de otro import, el segundo espera al commit, en sus lecturas de los intentos o en el `lockNumber` (`UPDLOCK, HOLDLOCK`), y entonces ve `undone`: toma el intento siguiente (escenario de la spec).
 
 `reopenForBatch` y `resolveForBatch` tocan `ValidationIssue` de varios imports en órdenes distintos, así que un 1205 es posible (#67). `withDeadlockRetry` envuelve las tres acciones: 3 intentos, pausa de 50–100 ms y `409 settlement_busy`.
 

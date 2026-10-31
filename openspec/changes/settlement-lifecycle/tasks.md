@@ -67,7 +67,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 - [x] 8.1 README: §1.5 (quitar #78 y #79 de los recortes), §3.2 (`AuditLog` y detalle de las tres acciones), §4.4 (filas de pay, unpay y undo con cuerpo, respuesta y códigos) y §3.2 de reglas de intentos si cambia su redacción
 - [x] 8.2 `docs/adr/006-batches-como-intentos.md`: quitar la nota de "queda para la Entrega 3"; `CLAUDE.md`: usuario `payments` en "Colección de la API"; `docs/wireframes/README.md`: desvíos del prototipo (la acción de pago va en la cabecera del intento, sin pantalla Payments)
-- [x] 8.4 Commit: docs(readme): ciclo de vida del intento y cierre de los recortes de pago y undo
+- [x] 8.3 Commit: docs(readme): ciclo de vida del intento y cierre de los recortes de pago y undo
 
 ## 9. Verificación integrada
 

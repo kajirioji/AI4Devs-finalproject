@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -310,29 +311,79 @@ describe('undo while another import takes the number', () => {
 })
 
 describe('an undo that fails', () => {
-  const stateOf = async (attempt: { batchId: string; importId: string }) => ({
+  /** A processed attempt whose movement resolved a finding of a current run of another import. */
+  async function attemptWithResolvedFinding() {
+    const attempt = await processedAttempt()
+    const otherImportId = randomUUID()
+    await ctx.prisma.import.create({
+      data: {
+        importId: otherImportId,
+        accountId: flow.accountIds['ProviderA-EUR']!,
+        createdByUserId: flow.userIds.analyst,
+        status: 'analyzed',
+      },
+    })
+    flow.createdImportIds.add(otherImportId)
+    const run = await ctx.prisma.validationRun.create({
+      data: { importId: otherImportId, runByUserId: flow.userIds.analyst },
+    })
+    const result = await ctx.prisma.validationResult.create({
+      data: { runId: run.runId, validationCode: 'missing_in_range', outcome: 'warning' },
+    })
+    const movement = await ctx.prisma.settlementTransaction.findFirstOrThrow({
+      where: { batchId: attempt.batchId },
+      select: { transactionId: true, cycle: true },
+    })
+    const { issueId } = await ctx.prisma.validationIssue.create({
+      data: {
+        resultId: result.resultId,
+        issueType: 'missing',
+        scope: 'in_range',
+        missingType: 'in_range',
+        ...movement,
+        resolutionStatus: 'resolved',
+        resolvedInBatchId: attempt.batchId,
+        resolvedAt: new Date(),
+      },
+    })
+    return { ...attempt, issueId }
+  }
+
+  const stateOf = async (attempt: { batchId: string; importId: string; issueId: number }) => ({
     status: await statusOf(attempt.batchId),
     import: await importOf(attempt.importId),
-    currentRuns: await ctx.prisma.validationRun.count({ where: { importId: attempt.importId, isSuperseded: false } }),
+    runs: await ctx.prisma.validationRun.findMany({
+      where: { importId: attempt.importId },
+      select: { runId: true, isSuperseded: true },
+    }),
+    finding: await ctx.prisma.validationIssue.findUniqueOrThrow({
+      where: { issueId: attempt.issueId },
+      select: { resolutionStatus: true, resolvedInBatchId: true },
+    }),
     audit: await auditCount(attempt.batchId, 'settlement.undo'),
   })
 
-  it('halfway leaves everything as it was', async () => {
-    const attempt = await processedAttempt()
+  it('after every other write leaves everything as it was', async () => {
+    const attempt = await attemptWithResolvedFinding()
     const before = await stateOf(attempt)
 
     await expect(
       repository(undefined, async (phase) => {
-        if (phase === 'run') throw new Error('failed after reopening the findings')
+        if (phase === 'audit') throw new Error('failed after reopening the findings and superseding the run')
       }).undo(undoCommand(attempt)),
-    ).rejects.toThrow('failed after reopening the findings')
+    ).rejects.toThrow('failed after reopening the findings and superseding the run')
 
     expect(await stateOf(attempt)).toEqual(before)
-    expect(before).toMatchObject({ status: 'processed', currentRuns: 1, audit: 0 })
+    expect(before).toMatchObject({
+      status: 'processed',
+      runs: [{ isSuperseded: false }],
+      finding: { resolutionStatus: 'resolved', resolvedInBatchId: attempt.batchId },
+      audit: 0,
+    })
   })
 
   it('answers settlement_busy after three deadlocks, leaving nothing', async () => {
-    const attempt = await processedAttempt()
+    const attempt = await attemptWithResolvedFinding()
     const before = await stateOf(attempt)
     let tries = 0
     const victim = new Prisma.PrismaClientKnownRequestError('deadlock', {
@@ -343,7 +394,7 @@ describe('an undo that fails', () => {
 
     await expect(
       repository(undefined, async (phase) => {
-        if (phase === 'missing') {
+        if (phase === 'audit') {
           tries += 1
           throw victim
         }

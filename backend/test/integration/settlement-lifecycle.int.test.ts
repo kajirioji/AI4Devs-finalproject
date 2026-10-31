@@ -227,7 +227,7 @@ describe('paying and unpaying batch-clean', () => {
     expect(res.statusCode, res.body).toBe(200)
     const actions = (await auditOf(batchId)).map((a) => a.action)
     expect(actions).toEqual(['settlement.process', 'settlement.pay', 'settlement.unpay', 'settlement.pay'])
-    expect(Date.parse(SettlementView.parse(res.json()).paidAt!)).toBeGreaterThanOrEqual(first!.createdAt.getTime())
+    expect(Date.parse(SettlementView.parse(res.json()).paidAt!)).toBeGreaterThan(first!.createdAt.getTime())
     expect((await unpay(batchId, REASON)).statusCode).toBe(200)
   })
 
@@ -338,6 +338,7 @@ describe('undoing and reprocessing batch-clean', () => {
   let first: SettlementView
   let undone: SettlementView
   let movementsBefore: Awaited<ReturnType<typeof movementsOf>>
+  let exportsBefore: Awaited<ReturnType<typeof exportsOf>>
   let otherImportId: string
   let reopenedIssue: number
   let supersededIssue: number
@@ -349,6 +350,7 @@ describe('undoing and reprocessing batch-clean', () => {
     reviewedRunId = validated.runId
     first = await processSample(importId, reviewedRunId)
     movementsBefore = await movementsOf(first.batchId)
+    exportsBefore = await exportsOf(first.batchId)
 
     // Findings of another import of the provider: resolved by the attempt in a current and in a superseded run, and by
     // hand. The ids of the attempt's movements make them real; built straight in the base, removed with the import.
@@ -428,12 +430,17 @@ describe('undoing and reprocessing batch-clean', () => {
     expect(view.validationSummary).toEqual(first.validationSummary)
   })
 
-  it('serves the three exports, and reads its movements as not Settled', async () => {
+  it('serves the three exports named by attempt and unchanged, and reads its movements as not Settled', async () => {
     for (const type of ['summary', 'transactions', 'reserves']) {
       const res = await flow.call('GET', `/settlements/${first.batchId}/export?type=${type}`)
       expect(res.statusCode, res.body).toBe(200)
-      expect(res.headers['content-disposition']).toContain(`${first.batchNo}`)
+      expect(res.headers['content-disposition']).toContain(`_B${first.batchNo}_A1_${type}.csv`)
     }
+    const exportsAfter = await exportsOf(first.batchId)
+    expect(exportsAfter.transactions).toBe(exportsBefore.transactions)
+    expect(exportsAfter.reserves).toBe(exportsBefore.reserves)
+    expect(exportsAfter.summary).toContain('Status,undone')
+    expect(withoutState(exportsAfter.summary!)).toBe(withoutState(exportsBefore.summary!))
     const page = SettlementTransactionsPage.parse(
       (await flow.call('GET', `/settlements/${first.batchId}/transactions?type=E`)).json(),
     )
@@ -594,6 +601,11 @@ describe('after undoing, the import is open again', () => {
       })
     ).map((i) => `${i.cycle}:${i.transactionId}`)
 
+  const duplicatesAcrossBatches = (importId: string) =>
+    ctx.prisma.validationIssue.count({
+      where: { result: { validationCode: 'duplicate_across_batches', run: { importId, isSuperseded: false } } },
+    })
+
   const processWithoutFees = async (importId: string, runId: number) => {
     const res = await flow.call('POST', `/imports/${importId}/settlements`, {
       runId,
@@ -618,10 +630,13 @@ describe('after undoing, the import is open again', () => {
 
     const whileProcessed = await run()
     expect(registered.filter((finding) => whileProcessed.includes(finding))).toEqual([])
+    const duplicatesWhileProcessed = await duplicatesAcrossBatches(other.importId)
 
     expect((await undo(attempt.batchId)).statusCode).toBe(200)
 
     expect(await run()).toEqual(expect.arrayContaining(registered))
+    // Nor does the undone attempt count as a previous one.
+    expect(await duplicatesAcrossBatches(other.importId)).toBeLessThan(duplicatesWhileProcessed)
 
     await flow.removeImports([validated.importId, other.importId])
   })
