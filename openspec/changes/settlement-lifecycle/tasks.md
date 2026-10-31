@@ -76,7 +76,7 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
   - `pnpm test`: shared 203; backend 1076 y 3 omitidos; frontend 604. Con la raíz en paralelo y `pnpm dev` levantado es intermitente: de dos pasadas, una en verde y otra con 2 fallos en el backend (`src/app.test.ts`, `src/openapi/export-openapi.test.ts`). El backend solo pasó 3 de 3 veces.
   - `pnpm lint`: un único error, de formato, en `.claude/settings.local.json`, archivo local ignorado por git y fuera del repositorio.
 - [x] 9.2 **Con turno de base de la persona**: `! pnpm db:seed` y `! pnpm --filter @recon/backend test:integration`, con `batch-clean` contra `expected.json`
-- [x] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar (colección: 176 de 176 peticiones y 186 de 186 tests)
+- [x] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar (colección: 177 de 177 peticiones y 187 de 187 tests)
 - [x] 9.4 Commit: test(settlement): verificación del ciclo de vida del intento
 
 ## Workflow follow-up
