@@ -16,7 +16,7 @@ Motivación y alcance en `proposal.md`; comportamiento en los delta specs. Lo qu
 
 **Goals:** una tabla de transiciones pura como única fuente de la regla; cada acción, atómica y con guarda, con el mismo orden de bloqueos que procesar; tests de concurrencia deterministas.
 
-**Non-Goals:** escribir `settlementStatusId` (Settled siempre se deriva); recalcular hallazgos de otros imports (D6); cambiar el formato de los exports. Los exports del intento no dicen si está pagado: lo que contienen se escribió al procesar.
+**Non-Goals:** escribir `settlementStatusId` (Settled siempre se deriva); recalcular hallazgos de otros imports (D6); cambiar el formato de los exports. Las cifras y los movimientos de los exports se fijaron al procesar; lo único que depende del estado son las líneas `Status` y `Payment` del export `summary`, que dicen el estado actual del intento.
 
 ## Decisions
 

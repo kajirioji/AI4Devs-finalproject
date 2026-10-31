@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { formatDecimal } from '@/lib/format'
+import { formatAuditDateTime, formatDecimal } from '@/lib/format'
 import type { SettlementView } from './contract'
 import { importSettlementsQuery } from './queries'
 import { strings } from './strings'
@@ -45,6 +45,7 @@ export function SummaryAttempts({ view }: { view: SettlementView }) {
               {s.attempts.line(
                 s.status[attempt.settledStatus],
                 attempt.approvedBy.userName,
+                formatAuditDateTime(attempt.processedAt),
                 formatDecimal(attempt.amountPayable),
               )}
             </li>

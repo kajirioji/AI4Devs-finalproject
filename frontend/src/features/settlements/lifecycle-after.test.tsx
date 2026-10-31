@@ -4,6 +4,7 @@ import { auditInstant } from '@/lib/format'
 import { ACCOUNT_IDS, type UserName } from '@/test/msw/fixtures'
 import {
   importAttempt,
+  respondNextSettlement,
   seedImportSettlements,
   seedNextBatchNumber,
   seedSettlement,
@@ -133,6 +134,7 @@ describe('the attempts of the import', () => {
     expect(rows[0]).toHaveTextContent('118 · attempt 2')
     expect(rows[0]).toHaveTextContent(s.attempts.viewing)
     expect(rows[0]).toHaveTextContent('33,000.00')
+    expect(rows[0]).toHaveTextContent('processed by analyst · 2026-10-19 11:40 ET')
     expect(within(rows[0]!).queryByRole('link')).not.toBeInTheDocument()
     expect(rows[1]).toHaveTextContent('118 · attempt 1')
     expect(rows[1]).toHaveTextContent('Undone')
@@ -158,6 +160,24 @@ describe('the attempts of the import', () => {
     await expect.poll(() => settlementRequests('importSettlements')[0]?.status).toBe(200)
     await new Promise((resolve) => setTimeout(resolve, 100))
     expect(screen.queryByRole('region', { name: s.attempts.title })).not.toBeInTheDocument()
+  })
+
+  it('the error of an action stays with its attempt: following a link to another one already read does not carry it', async () => {
+    const { importId } = validatedImport()
+    const first = seedSettlement(importId, { batchNo: 118, overrides: { attemptNo: 1 } })
+    seedSettlement(importId, { batchNo: 118, overrides: { attemptNo: 2 } })
+    const { user } = renderApp(`/settlements/${first.batchId}`, { as: 'payments' })
+    await user.click(await screen.findByRole('link', { name: '118 · attempt 2' }, OPENING))
+    await user.click(await screen.findByRole('link', { name: '118 · attempt 1' }))
+    await screen.findByRole('link', { name: '118 · attempt 2' })
+    respondNextSettlement('pay', { status: 409, code: 'settlement_not_current', message: 'not current' })
+
+    await user.click(screen.getByRole('button', { name: a.markPaid }))
+    expect(await screen.findByText(a.errors.notCurrent)).toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: '118 · attempt 2' }))
+
+    await screen.findByRole('link', { name: '118 · attempt 1' })
+    expect(screen.queryByText(a.errors.notCurrent)).not.toBeInTheDocument()
   })
 
   it('asks for them again after an action', async () => {

@@ -22,7 +22,7 @@ Solo SHALL admitirse `pay`: `processed → paid`; `unpay`: `paid → processed`;
 #### Scenario: Pagar no cambia cifras ni movimientos
 - **GIVEN** la vista y los movimientos de un intento `processed`
 - **WHEN** se paga
-- **THEN** totales, `amountPayable`, fees, movimientos, `settlementStatusId` y exports son los mismos, y solo cambian el estado y los campos de pago
+- **THEN** totales, `amountPayable`, fees, movimientos, `settlementStatusId` y los exports `transactions` y `reserves` son los mismos, el export `summary` solo cambia en sus líneas `Status` y `Payment`, que dicen el estado actual, y en la vista solo cambian el estado y los campos de pago
 
 ### Requirement: Retirar la marca de pago
 `POST /api/v1/settlements/{id}/unpay` SHALL exigir `payment.process` y `reason` (1–500 caracteres tras quitar espacios), devolver el intento a `processed` con `paidAt` y `paidByUserId` vacíos, y auditar `settlement.unpay` con el usuario, la fecha, el motivo y quién y cuándo había pagado. SHALL NOT revertir nada del Back-Office.

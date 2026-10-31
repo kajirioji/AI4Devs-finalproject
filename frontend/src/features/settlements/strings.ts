@@ -189,7 +189,8 @@ export const strings = {
     attempts: {
       title: 'Attempts of this import',
       viewing: 'viewing',
-      line: (status: string, by: string, amount: string) => `${status} · processed by ${by} · ${amount}`,
+      line: (status: string, by: string, when: string, amount: string) =>
+        `${status} · processed by ${by} · ${when} · ${amount}`,
     },
     actions: {
       markPaid: 'Mark as paid',

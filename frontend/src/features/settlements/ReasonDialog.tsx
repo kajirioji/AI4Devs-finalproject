@@ -20,8 +20,9 @@ const MAX_REASON = 500
 
 /**
  * An action with a required reason and its consequences (spec "motivo y confirmación"): the reason starts empty each
- * time and travels without the spaces of its ends. Escape or Cancel close the dialog without calling the API; the focus
- * goes back to the action. `onConfirm` says whether to close it: a retryable failure keeps it, with what was written.
+ * time and travels without the spaces of its ends. Escape or Cancel close the dialog without calling the API, unless a
+ * request is on its way; the focus goes back to the action. `onConfirm` says whether to close it: a retryable failure
+ * keeps it, with what was written.
  */
 export function ReasonDialog({
   label,
@@ -50,6 +51,8 @@ export function ReasonDialog({
   const hint = reason === '' ? s.writeReason : tooLong ? s.tooLong : null
 
   const onOpenChange = (next: boolean) => {
+    // Closing it now would leave nowhere to say that the request on its way failed.
+    if (!next && pending) return
     if (next) {
       setText('')
       onOpen()

@@ -164,5 +164,6 @@ export function SettlementSummaryPage() {
       </div>
     )
   }
-  return <Summary view={query.data} />
+  // The key: what an action left on screen belongs to its attempt, and a link can reach another one already in the cache.
+  return <Summary key={batchId} view={query.data} />
 }

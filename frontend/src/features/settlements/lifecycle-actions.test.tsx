@@ -249,6 +249,21 @@ describe('the reason dialog', () => {
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
     expect(settlementRequests('undo')).toHaveLength(1)
   })
+
+  it('Escape does not close it while the request is on its way: its outcome has to be said somewhere', async () => {
+    const hold = holdNextSettlement('undo')
+    const { user } = await open('analyst')
+
+    await user.click(action(s.undo)!)
+    await user.type(dialog().getByLabelText(s.reason), 'Wrong date')
+    await user.click(dialog().getByRole('button', { name: s.confirm }))
+    await hold.arrived
+    await user.keyboard('{Escape}')
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    hold.release()
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+  })
 })
 
 describe('the errors of an action', () => {

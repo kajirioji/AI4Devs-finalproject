@@ -69,6 +69,25 @@ const pay = (batchId: string) => flow.call('POST', `/settlements/${batchId}/pay`
 const unpay = (batchId: string, reason?: string) =>
   flow.call('POST', `/settlements/${batchId}/unpay`, reason === undefined ? {} : { reason }, 'payments')
 
+/** The three exports as downloaded; their audit rows are removed so that they do not count as actions of the attempt. */
+async function exportsOf(batchId: string) {
+  const bodies: Record<string, string> = {}
+  for (const type of ['summary', 'transactions', 'reserves']) {
+    const res = await flow.call('GET', `/settlements/${batchId}/export?type=${type}`)
+    expect(res.statusCode, res.body).toBe(200)
+    bodies[type] = res.body
+  }
+  await ctx.prisma.auditLog.deleteMany({ where: { entityId: batchId.toLowerCase(), action: 'settlement.export' } })
+  return bodies
+}
+
+/** The summary export says the current state of the attempt in these two lines; everything else was fixed at processing. */
+const withoutState = (summary: string) =>
+  summary
+    .split(/\r?\n/)
+    .filter((line) => !/^(Status|Payment),/.test(line))
+    .join('\n')
+
 /** What must not change when an attempt is paid or unpaid: everything but its status and its payment fields. */
 function figures(view: SettlementView) {
   const { status: _s, settledStatus: _d, paidAt: _a, paidBy: _b, ...rest } = view
@@ -98,6 +117,7 @@ describe('paying and unpaying batch-clean', () => {
 
   it('pays: paid, settled, audited, and the movements read as Settled (HU3 CA7)', async () => {
     const movementsBefore = await movementsOf(batchId)
+    const exportsBefore = await exportsOf(batchId)
 
     const res = await pay(batchId)
 
@@ -111,6 +131,11 @@ describe('paying and unpaying batch-clean', () => {
     expect(view.paidAt).not.toBeNull()
     expect(figures(view)).toEqual(figures(processed))
     expect(await movementsOf(batchId)).toEqual(movementsBefore)
+    const exportsAfter = await exportsOf(batchId)
+    expect(exportsAfter.transactions).toBe(exportsBefore.transactions)
+    expect(exportsAfter.reserves).toBe(exportsBefore.reserves)
+    expect(exportsAfter.summary).toContain('Status,paid')
+    expect(withoutState(exportsAfter.summary!)).toBe(withoutState(exportsBefore.summary!))
 
     const [, audit] = await auditOf(batchId)
     expect(audit).toMatchObject({ action: 'settlement.pay', userId: flow.userIds.payments })
@@ -204,6 +229,54 @@ describe('paying and unpaying batch-clean', () => {
     expect(actions).toEqual(['settlement.process', 'settlement.pay', 'settlement.unpay', 'settlement.pay'])
     expect(Date.parse(SettlementView.parse(res.json()).paidAt!)).toBeGreaterThanOrEqual(first!.createdAt.getTime())
     expect((await unpay(batchId, REASON)).statusCode).toBe(200)
+  })
+
+  it('unpaying does not reopen a finding the paid attempt resolved', async () => {
+    const otherImportId = randomUUID()
+    await ctx.prisma.import.create({
+      data: {
+        importId: otherImportId,
+        accountId: fixtureId(flow.accountIds['ProviderA-EUR'], 'ProviderA-EUR'),
+        createdByUserId: flow.userIds.analyst,
+        status: 'analyzed',
+      },
+    })
+    try {
+      const run = await ctx.prisma.validationRun.create({
+        data: { importId: otherImportId, runByUserId: flow.userIds.analyst },
+      })
+      const result = await ctx.prisma.validationResult.create({
+        data: { runId: run.runId, validationCode: 'missing_previous_to_batch', outcome: 'warning' },
+      })
+      const [movement] = await movementsOf(batchId)
+      const transaction = await ctx.prisma.settlementTransaction.findUniqueOrThrow({
+        where: { settlementTxnId: movement!.settlementTxnId },
+        select: { transactionId: true, cycle: true },
+      })
+      const { issueId } = await ctx.prisma.validationIssue.create({
+        data: {
+          resultId: result.resultId,
+          issueType: 'missing',
+          scope: 'previous_to_batch',
+          missingType: 'previous_to_batch',
+          transactionId: transaction.transactionId,
+          cycle: transaction.cycle,
+          resolutionStatus: 'resolved',
+          resolvedInBatchId: batchId,
+          resolvedAt: new Date(),
+        },
+      })
+      expect((await pay(batchId)).statusCode).toBe(200)
+
+      expect((await unpay(batchId, REASON)).statusCode).toBe(200)
+
+      expect(await ctx.prisma.validationIssue.findUniqueOrThrow({ where: { issueId } })).toMatchObject({
+        resolutionStatus: 'resolved',
+        resolvedInBatchId: batchId,
+      })
+    } finally {
+      await flow.removeImports([otherImportId])
+    }
   })
 
   it('answers 403 to viewer and analyst', async () => {
@@ -509,6 +582,75 @@ describe('undoing and reprocessing batch-clean', () => {
       const res = await flow.call('POST', `/settlements/${currentBatchId}/undo`, { reason: 'no' }, user)
       expect(res.statusCode, res.body).toBe(403)
     }
+  })
+})
+
+describe('after undoing, the import is open again', () => {
+  const missingOf = async (runId: number) =>
+    (
+      await ctx.prisma.validationIssue.findMany({
+        where: { issueType: 'missing', result: { runId } },
+        select: { transactionId: true, cycle: true },
+      })
+    ).map((i) => `${i.cycle}:${i.transactionId}`)
+
+  const processWithoutFees = async (importId: string, runId: number) => {
+    const res = await flow.call('POST', `/imports/${importId}/settlements`, {
+      runId,
+      confirmChannelAssignment: true,
+      batchFees: [],
+    })
+    expect(res.statusCode, res.body).toBe(201)
+    return SettlementView.parse(res.json())
+  }
+
+  it('a new run of another import brings back the missing findings the undone attempt had registered', async () => {
+    const validated = await flow.validatedSample('batch-issues')
+    const registered = await missingOf(validated.runId)
+    expect(registered.length).toBeGreaterThan(0)
+    const attempt = await processWithoutFees(validated.importId, validated.runId)
+    const other = await flow.analyzedSample('batch-issues')
+    const run = async () => {
+      const res = await flow.call('POST', `/imports/${other.importId}/validations`)
+      expect(res.statusCode, res.body).toBe(201)
+      return missingOf(res.json().run.runId)
+    }
+
+    const whileProcessed = await run()
+    expect(registered.filter((finding) => whileProcessed.includes(finding))).toEqual([])
+
+    expect((await undo(attempt.batchId)).statusCode).toBe(200)
+
+    expect(await run()).toEqual(expect.arrayContaining(registered))
+
+    await flow.removeImports([validated.importId, other.importId])
+  })
+
+  it('admits validating, changing an inclusion and cancelling', async () => {
+    const validated = await flow.validatedSample('batch-issues')
+    const attempt = await processWithoutFees(validated.importId, validated.runId)
+    expect((await undo(attempt.batchId)).statusCode).toBe(200)
+
+    const run = await flow.call('POST', `/imports/${validated.importId}/validations`)
+    expect(run.statusCode, run.body).toBe(201)
+    const issues = await flow.call(
+      'GET',
+      `/imports/${validated.importId}/validation-issues?type=duplicate&scope=in_batch`,
+    )
+    const detail = await flow.call('GET', `/validation-issues/${issues.json().items[0].issueId}`)
+    const excluded = detail.json().occurrences.find((o: { defaultIncluded: boolean }) => !o.defaultIncluded)
+    const inclusion = await flow.call('PATCH', `/conflict-occurrences/${excluded.occurrenceId}`, {
+      includeInSettlement: true,
+    })
+    expect(inclusion.statusCode, inclusion.body).toBe(200)
+
+    const cancel = await flow.call('POST', `/imports/${validated.importId}/cancel`)
+    expect(cancel.statusCode, cancel.body).toBe(200)
+    expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId: validated.importId } })).status).toBe(
+      'cancelled',
+    )
+
+    await flow.removeImports([validated.importId])
   })
 })
 

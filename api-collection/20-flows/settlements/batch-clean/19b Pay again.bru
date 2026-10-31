@@ -1,0 +1,34 @@
+meta {
+  name: 19b Pay again
+  type: http
+  seq: 21
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/pay
+  body: none
+  auth: bearer
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+auth:bearer {
+  token: {{paymentsToken}}
+}
+
+vars:pre-request {
+  as: payments
+}
+
+tests {
+  test('a paid attempt is not paid twice: 409 settlement_not_processed', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('settlement_not_processed');
+    expect(res.body.details.status).to.equal('paid');
+  });
+}

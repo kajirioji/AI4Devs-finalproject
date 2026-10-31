@@ -67,14 +67,13 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 
 - [x] 8.1 README: §1.5 (quitar #78 y #79 de los recortes), §3.2 (`AuditLog` y detalle de las tres acciones), §4.4 (filas de pay, unpay y undo con cuerpo, respuesta y códigos) y §3.2 de reglas de intentos si cambia su redacción
 - [x] 8.2 `docs/adr/006-batches-como-intentos.md`: quitar la nota de "queda para la Entrega 3"; `CLAUDE.md`: usuario `payments` en "Colección de la API"; `docs/wireframes/README.md`: desvíos del prototipo (la acción de pago va en la cabecera del intento, sin pantalla Payments)
-- [ ] 8.3 Marcar `settlement` en #21 tras comprobar `openspec validate settlement --type spec` con los deltas aplicados
 - [x] 8.4 Commit: docs(readme): ciclo de vida del intento y cierre de los recortes de pago y undo
 
 ## 9. Verificación integrada
 
 - [x] 9.1 `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde, anotando los conteos en este archivo
   - `pnpm typecheck`: sin errores.
-  - `pnpm test`: shared 203; backend 1076 y 3 omitidos; frontend 602. Con la raíz en paralelo y `pnpm dev` levantado es intermitente: de dos pasadas, una en verde y otra con 2 fallos en el backend (`src/app.test.ts`, `src/openapi/export-openapi.test.ts`). El backend solo pasó 3 de 3 veces.
+  - `pnpm test`: shared 203; backend 1076 y 3 omitidos; frontend 604. Con la raíz en paralelo y `pnpm dev` levantado es intermitente: de dos pasadas, una en verde y otra con 2 fallos en el backend (`src/app.test.ts`, `src/openapi/export-openapi.test.ts`). El backend solo pasó 3 de 3 veces.
   - `pnpm lint`: un único error, de formato, en `.claude/settings.local.json`, archivo local ignorado por git y fuera del repositorio.
 - [x] 9.2 **Con turno de base de la persona**: `! pnpm db:seed` y `! pnpm --filter @recon/backend test:integration`, con `batch-clean` contra `expected.json`
 - [x] 9.3 **Con turno de base de la persona**: `! pnpm test:api` y `! pnpm screenshots:settlement-lifecycle`; recorrido a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar (colección: 176 de 176 peticiones y 186 de 186 tests)
@@ -85,3 +84,4 @@ Orden: dominio → contrato → `pay`/`unpay` → `undo` → colección → fron
 - `/opsx:verify` para contrastar implementación y artifacts.
 - PR desde `feat/settlement-lifecycle` hacia `feature/entrega-3-MVP` (la base de la Entrega 3), con CI verde y `Closes #78`, `Closes #79`.
 - `/opsx:archive` tras el merge.
+- Después del archive, con los deltas ya aplicados: comprobar `openspec validate settlement --type spec` y marcar `settlement` en #21.
