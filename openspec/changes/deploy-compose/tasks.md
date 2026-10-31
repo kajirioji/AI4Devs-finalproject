@@ -64,6 +64,8 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 
 Pasos manuales, fuera de este change, que completan la definición de hecho del issue #97:
 
-- En el servidor, la persona sigue `docs/deploy.md`, crea el túnel y la regla de rate limiting, y comprueba los criterios 1 a 4 del issue por la URL pública, también desde un dispositivo fuera de la red local.
-- Añadir la URL pública a README §0.4 y corregir en `docs/deploy.md` lo que el panel de Cloudflare muestre de otra forma.
-- `/opsx:verify`, PR hacia `feature/entrega-3-MVP` con la plantilla, CI en verde y `/opsx:archive`.
+- Fusionar este PR en `feature/entrega-3-MVP`: `docs/deploy.md` clona esa rama.
+- En el servidor, la persona sigue `docs/deploy.md`, crea el túnel, fuerza HTTPS, crea la regla de rate limiting y comprueba los criterios 1 a 4 del issue por la URL pública, también desde un dispositivo fuera de la red local, y `batch-clean` por esa URL (design, Risks).
+- En un PR posterior hacia `feature/entrega-3-MVP`: añadir la URL pública a README §0.4 y corregir en `docs/deploy.md` lo que el panel de Cloudflare muestre de otra forma.
+- `/opsx:verify` indicándole el issue #97, porque la spec no tiene escenarios de URL pública, y `/opsx:archive`.
+- Change aparte: activar `trustProxy` para que la auditoría registre la IP real (`docs/deploy.md`, sección 16).

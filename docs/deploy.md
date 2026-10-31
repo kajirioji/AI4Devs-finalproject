@@ -141,9 +141,30 @@ curl https://recon.example.com/api/v1/health
 
 Debe responder `{"status":"ok","db":"ok"}`. Después abre la URL en un navegador y entra con el usuario `analyst` y el valor de `SEED_PASSWORD` de `infra/.env.deploy`. No sirve la contraseña de un entorno local: el despliegue no lee el `.env` de la raíz. Si cambias `SEED_PASSWORD`, no surte efecto hasta volver a sembrar. Repite la prueba desde un dispositivo fuera de la red local, por ejemplo un móvil con datos.
 
-## 10. Limitar los intentos de login (obligatorio)
+## 10. Proteger la entrada (obligatorio)
 
-La API no limita los intentos de login, así que **sin esta regla la URL no se da por publicada**.
+**Sin estos dos pasos la URL no se da por publicada.**
+
+### Forzar HTTPS
+
+Sin este paso, quien entre por `http://` envía su contraseña sin cifrar hasta Cloudflare. Estos ajustes afectan a todo el dominio: si tienes otros servicios en él que solo funcionan por `http://`, resuélvelo antes.
+
+1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com) y abre tu dominio.
+2. Abre **SSL/TLS** → **Edge Certificates**.
+3. Activa **Always Use HTTPS**.
+4. En **HTTP Strict Transport Security (HSTS)**, pulsa **Enable HSTS** y acepta el aviso.
+5. Activa **Enable HSTS**, elige `Max Age` de `1 month`, deja **Include subdomains** y **Preload** desactivados y pulsa **Save**. Los navegadores recuerdan este ajuste durante ese tiempo, así que desactivarlo no surte efecto al momento.
+
+Comprueba que funciona. La primera orden debe mostrar una redirección `301` o `308` hacia `https://`, y la segunda una línea `strict-transport-security`:
+
+```bash
+curl -sI http://recon.example.com | grep -iE '^(HTTP|location)'
+curl -sI https://recon.example.com | grep -i '^strict-transport-security'
+```
+
+### Limitar los intentos de login
+
+La API no limita los intentos de login, así que hace falta esta regla.
 
 1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com) y abre tu dominio.
 2. Abre **Security** → **WAF** → **Rate limiting rules** y pulsa **Create rule**. Si tu panel muestra **Security rules**, crea allí una regla de tipo rate limiting.
@@ -245,3 +266,7 @@ Con base externa la copia de seguridad y los permisos de red corren por cuenta d
 ## 15. Límites de Cloudflare
 
 El plan gratuito corta las peticiones de más de 100 MB y las respuestas que tardan más de unos 100 segundos. La aplicación admite 20 MiB por archivo y hasta 200 MiB en total, así que un batch que supere los 100 MB puede fallar por la URL pública aunque el servidor lo acepte. Los archivos de `data/samples/` quedan muy por debajo de ese límite.
+
+## 16. Limitación conocida: IP en la auditoría
+
+La auditoría de los logins registra la IP del contenedor `web`, no la de quien entra, porque la API todavía no confía en la cabecera `X-Forwarded-For`. No uses ese dato para identificar a nadie. Para ver los intentos por IP, usa el panel de Cloudflare.
