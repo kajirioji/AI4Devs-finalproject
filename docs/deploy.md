@@ -2,7 +2,7 @@
 
 Esta guía publica Recon Tool en una URL pública desde un servidor con Docker. Está pensada para quien no lo ha hecho antes: sigue las secciones en orden y no te saltes ninguna. La aplicación solo debe usarse con datos sintéticos.
 
-> **Pendiente de contrastar.** Los pasos del panel de Cloudflare (secciones 5 y 10) no se han podido ejecutar todavía en un despliegue real y Cloudflare cambia sus menús con frecuencia. Si algo aparece con otro nombre, busca el equivalente y corrige esta guía.
+> **Contrastado el 2026-10-31.** Los pasos del panel de Cloudflare (secciones 5, 6 y 10) se han comprobado en un despliegue real. Cloudflare cambia sus menús con frecuencia: si algo aparece con otro nombre, busca el equivalente y corrige esta guía.
 
 ## 1. Qué es cada pieza
 
@@ -94,10 +94,8 @@ Guarda el archivo en tu gestor de contraseñas: sin backups, es lo único que te
 1. Entra en [one.dash.cloudflare.com](https://one.dash.cloudflare.com) y elige tu cuenta.
 2. Abre **Networks** → **Tunnels** y pulsa **Create a tunnel**.
 3. Elige **Cloudflared**, ponle un nombre y pulsa **Save tunnel**.
-4. La pantalla muestra una orden de instalación con un texto largo después de `--token`. **No la ejecutes:** copia solo ese texto, pégalo como valor de `TUNNEL_TOKEN` en `infra/.env.deploy` y pulsa **Next**.
-5. En **Public Hostname**, elige el subdominio y el dominio de la URL pública.
-6. En **Service**, elige el tipo `HTTP` y escribe la URL `web:8080`. Es el nombre del servicio dentro de Docker, no el del servidor.
-7. Pulsa **Save tunnel**.
+4. La pantalla de instalación muestra un selector de sistema operativo y una orden truncada con un botón de copiar. Elige **Docker** y copia la orden. **No la ejecutes:** toma solo el texto que va después de `--token`, que empieza por `eyJ`, y pégalo como valor de `TUNNEL_TOKEN` en `infra/.env.deploy`.
+5. Deja esa pantalla abierta. El botón **Continue** sigue desactivado hasta que el túnel conecta, y eso ocurre en la sección siguiente.
 
 El token permite conectar con tu túnel: trátalo como una contraseña.
 
@@ -110,6 +108,14 @@ scripts/deploy.sh ps
 ```
 
 `build` tarda varios minutos la primera vez. Al terminar, `ps` debe mostrar los cuatro servicios como `healthy`. El panel de Cloudflare debe mostrar el túnel como **Healthy**.
+
+Con el túnel conectado, añade la URL pública en el panel:
+
+1. Pulsa **Continue**. Llegarás a la vista del túnel, con las pestañas **Overview**, **Routes** y **Live logs**.
+2. Pulsa **Add route** y elige **Published application**.
+3. En **Subdomain** y **Domain**, elige la URL pública. **Full hostname** muestra el resultado. Deja **Path** vacío.
+4. En **Service URL**, escribe `http://web:8080`. Es el nombre del servicio dentro de Docker, no el del servidor.
+5. Guarda la ruta.
 
 La URL ya responde, pero **el login todavía falla**: la base está vacía hasta completar las dos secciones siguientes.
 
@@ -153,7 +159,7 @@ Sin este paso, quien entre por `http://` envía su contraseña sin cifrar hasta 
 2. Abre **SSL/TLS** → **Edge Certificates**.
 3. Activa **Always Use HTTPS**.
 4. En **HTTP Strict Transport Security (HSTS)**, pulsa **Enable HSTS** y acepta el aviso.
-5. Activa **Enable HSTS**, elige `Max Age` de `1 month`, deja **Include subdomains** y **Preload** desactivados y pulsa **Save**. Los navegadores recuerdan este ajuste durante ese tiempo, así que desactivarlo no surte efecto al momento.
+5. Activa **Enable HSTS**, elige `Max Age` de `1 month`, deja **Include subdomains** y **Preload** desactivados y pulsa **Save**. Los navegadores recuerdan este ajuste durante ese tiempo, así que desactivarlo no surte efecto al momento. Una vez activado, el botón pasa a llamarse **Change HSTS Settings**.
 
 Comprueba que funciona. La primera orden debe mostrar una redirección `301` o `308` hacia `https://`, y la segunda una línea `strict-transport-security`:
 
@@ -167,18 +173,20 @@ curl -sI https://recon.example.com | grep -i '^strict-transport-security'
 La API no limita los intentos de login, así que hace falta esta regla.
 
 1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com) y abre tu dominio.
-2. Abre **Security** → **WAF** → **Rate limiting rules** y pulsa **Create rule**. Si tu panel muestra **Security rules**, crea allí una regla de tipo rate limiting.
+2. Abre **Security** → **Security rules** y, en la sección **Rate limiting rules**, crea una regla. El plan gratuito solo admite una; si ya la tienes ocupada (`1/1 rules`), tendrás que editarla o eliminarla.
 3. En **Rule name**, escribe `login`.
-4. Pulsa **Edit expression** y pega:
+4. En **When incoming requests match...**, abre el editor de expresión (en el alta, el enlace **Edit expression**, no reverificado) y pega:
 
    ```text
    (http.request.uri.path eq "/api/v1/auth/login" and http.request.method eq "POST")
    ```
 
-5. En **With the same characteristics**, deja **IP**.
-6. En **When rate exceeds**, pon `5` peticiones por `10 seconds`.
-7. En **Then take action**, elige **Block**, con la duración que ofrezca tu plan.
-8. Pulsa **Deploy**.
+5. En **With the same characteristics...**, deja **IP**. En el plan gratuito no se puede cambiar.
+6. En **When rate exceeds...**, pon **Requests** `5` y **Period** `10 seconds`.
+7. En **Then take action...**, elige **Block** en **Choose action**.
+8. En **For duration...**, elige `10 seconds`, la única opción del plan gratuito.
+9. Deja **Execution order** en **First** y **Status** en **Active**.
+10. Guarda la regla: el botón es **Deploy** en el alta (no reverificado) y **Save** al editarla.
 
 Comprueba que funciona. Esta orden usa una contraseña equivocada y debe mostrar varios `401` y, después, `429`:
 
@@ -221,7 +229,7 @@ Nunca se usan `prisma migrate dev`, `prisma db push` ni `prisma migrate reset` e
 | `TUNNEL_TOKEN is empty` | No se copió el token | Sección 5 |
 | `cloudflared` queda `unhealthy` | Token incorrecto o sin salida a internet | `scripts/deploy.sh logs cloudflared` y revisa el token |
 | Cloudflare muestra el error 1033 | El túnel no está conectado | Comprueba `cloudflared` con `ps` y `logs` |
-| Cloudflare muestra un error 502 | El **Service** del túnel está mal | Debe ser `HTTP` y `web:8080` |
+| Cloudflare muestra un error 502 | La **Service URL** de la ruta está mal | Debe ser `http://web:8080` |
 | La URL abre pero el login falla | Falta migrar o sembrar | Secciones 7 y 8 |
 | `api` no arranca y sus registros indican `Login failed` | La contraseña se cambió después del primer arranque | Sección 4, `ALTER LOGIN` |
 | `Msg 904` en los registros de `mssql` | SQL Server aún arranca | Es normal si va seguido de `[init] done`: se reintenta solo |
