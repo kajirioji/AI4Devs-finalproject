@@ -219,7 +219,7 @@ export const ChannelAssigned = z.object({
 })
 export type ChannelAssigned = z.infer<typeof ChannelAssigned>
 
-/** An attempt as written: the 201 of processing and, in #12, GET /settlements/{id}. */
+/** An attempt as written: the 201 of processing, GET /settlements/{id} and the 200 of pay, unpay and undo. */
 export const SettlementView = SettlementFigures.extend({
   batchId: z.uuid(),
   importId: z.uuid(),
@@ -233,6 +233,13 @@ export const SettlementView = SettlementFigures.extend({
   /** Audit instant (UTC). */
   processedAt: z.iso.datetime(),
   settlementDate: IsoDate.nullable(),
+  /** Audit instant (UTC); null unless the attempt is paid (unpaying empties them, the audit keeps the previous ones). */
+  paidAt: z.iso.datetime().nullable(),
+  paidBy: UserRef.nullable(),
+  /** Audit instant (UTC); null unless the attempt is undone. */
+  undoneAt: z.iso.datetime().nullable(),
+  undoneBy: UserRef.nullable(),
+  undoReason: z.string().nullable(),
   channelsAssigned: z.array(ChannelAssigned),
   /** null when the attempt has no settlement.process audit (e.g. seeded history). */
   validationSummary: z
@@ -262,6 +269,10 @@ export type NextBatchNumber = z.infer<typeof NextBatchNumber>
 export const NextBatchNumberQuery = z.object({ importId: z.uuid().optional() })
 export type NextBatchNumberQuery = z.infer<typeof NextBatchNumberQuery>
 
+/** Body of POST /settlements/{id}/unpay and /undo: the reason, without the spaces of its ends (NVARCHAR(500)). */
+export const ReasonRequest = z.strictObject({ reason: z.string().trim().min(1).max(500) })
+export type ReasonRequest = z.infer<typeof ReasonRequest>
+
 // ───────────────────────── Error details ─────────────────────────
 
 export const BatchFeeInvalidReason = z.enum([
@@ -290,3 +301,11 @@ export type ChannelAssignmentNotConfirmedDetails = z.infer<typeof ChannelAssignm
 /** 409 import_not_validated. */
 export const ImportNotValidatedDetails = z.object({ status: ImportStatus })
 export type ImportNotValidatedDetails = z.infer<typeof ImportNotValidatedDetails>
+
+/** 409 settlement_not_processed, settlement_not_paid and settlement_payment_not_removed: the status it has now. */
+export const SettlementStateDetails = z.object({ status: BatchStatus })
+export type SettlementStateDetails = z.infer<typeof SettlementStateDetails>
+
+/** 409 settlement_not_current: a processed attempt that is not the current one of its import. */
+export const SettlementNotCurrentDetails = z.object({ importStatus: ImportStatus, currentBatchId: z.uuid().nullable() })
+export type SettlementNotCurrentDetails = z.infer<typeof SettlementNotCurrentDetails>

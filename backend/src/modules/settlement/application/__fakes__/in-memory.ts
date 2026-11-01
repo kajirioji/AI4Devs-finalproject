@@ -4,16 +4,23 @@
  */
 import type { ImportStatus, SettlementView } from '@recon/shared'
 import type { Scope } from '../../../catalog/domain/scope.js'
+import type { LifecycleAction } from '../../domain/batch-lifecycle.js'
 import type { SettlementInput } from '../../domain/types.js'
 import type {
   CurrentRun,
   ImportContext,
+  LifecycleCommand,
   PrefilledBatchFees,
   ProcessCommand,
+  ReasonCommand,
+  SettlementLifecycleRepository,
   SettlementReader,
   SettlementRepository,
   SettlementSource,
+  UndoCommand,
 } from '../ports.js'
+
+type SettlementLifecycleCall = { action: LifecycleAction } & LifecycleCommand & { reason?: string; importId?: string }
 
 export interface InMemorySourceOptions {
   status?: ImportStatus
@@ -94,6 +101,29 @@ export class InMemorySettlementRepository implements SettlementRepository {
   async process(command: ProcessCommand): Promise<{ batchId: string }> {
     this.commands.push(command)
     return { batchId: this.batchId }
+  }
+}
+
+/** Records the lifecycle actions it receives; `failWith` is what the guard of the real one would raise. */
+export class InMemorySettlementLifecycleRepository implements SettlementLifecycleRepository {
+  readonly calls: SettlementLifecycleCall[] = []
+  failWith: Error | null = null
+
+  private record(call: SettlementLifecycleCall): void {
+    if (this.failWith) throw this.failWith
+    this.calls.push(call)
+  }
+
+  async pay(command: LifecycleCommand): Promise<void> {
+    this.record({ action: 'pay', ...command })
+  }
+
+  async unpay(command: ReasonCommand): Promise<void> {
+    this.record({ action: 'unpay', ...command })
+  }
+
+  async undo(command: UndoCommand): Promise<void> {
+    this.record({ action: 'undo', ...command })
   }
 }
 

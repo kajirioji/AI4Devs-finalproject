@@ -8,6 +8,7 @@
     "screenshots:web-validations": "node screenshots/web-validations.ts",
     "screenshots:web-settlement": "node screenshots/web-settlement.ts",
     "screenshots:settlements-browse": "node screenshots/settlements-browse.ts",
+    "screenshots:settlement-lifecycle": "node screenshots/settlement-lifecycle.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

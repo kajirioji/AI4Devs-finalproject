@@ -14,6 +14,7 @@ import type { ExportRow } from '../domain/exports/transactions-csv.js'
 /** What the reads need of an attempt before the view: its scope, the file name and the RR description. */
 export interface BatchHeader {
   batchId: string
+  importId: string
   accountId: string
   accountName: string
   batchNo: number

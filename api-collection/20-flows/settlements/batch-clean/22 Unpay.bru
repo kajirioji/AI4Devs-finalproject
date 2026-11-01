@@ -1,0 +1,40 @@
+meta {
+  name: 22 Unpay
+  type: http
+  seq: 24
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/unpay
+  body: json
+  auth: bearer
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+body:json {
+  {
+    "reason": "Payment was rejected by the bank"
+  }
+}
+
+auth:bearer {
+  token: {{paymentsToken}}
+}
+
+vars:pre-request {
+  as: payments
+}
+
+tests {
+  test('200 processed, pending payment, the payment fields empty', () => {
+    expect(res.status).to.equal(200);
+    expect([res.body.status, res.body.settledStatus]).to.eql(['processed', 'pending_payment']);
+    expect([res.body.paidAt, res.body.paidBy]).to.eql([null, null]);
+  });
+}

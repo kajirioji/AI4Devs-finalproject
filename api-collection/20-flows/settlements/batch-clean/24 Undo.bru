@@ -1,0 +1,34 @@
+meta {
+  name: 24 Undo
+  type: http
+  seq: 26
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+body:json {
+  {
+    "reason": "Wrong settlement date"
+  }
+}
+
+tests {
+  test('200 undone, with who and why, keeping the movements', () => {
+    expect(res.status).to.equal(200);
+    expect([res.body.status, res.body.settledStatus]).to.eql(['undone', 'undone']);
+    expect(res.body.undoneBy.userName).to.equal('analyst');
+    expect(res.body.undoReason).to.equal('Wrong settlement date');
+    expect(res.body.movements).to.eql({ E: 450, I: 10, R: 320 });
+  });
+}

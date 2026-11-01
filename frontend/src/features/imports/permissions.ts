@@ -9,6 +9,10 @@ export function useCanProcess(): boolean {
   return useMe().permissions.includes('settlement.process')
 }
 
+export function useCanPay(): boolean {
+  return useMe().permissions.includes('payment.process')
+}
+
 /** Files and mapping can change: the user may process and the import is before the analysis. */
 export function useImportAccess(status: ImportStatus) {
   const canProcess = useCanProcess()

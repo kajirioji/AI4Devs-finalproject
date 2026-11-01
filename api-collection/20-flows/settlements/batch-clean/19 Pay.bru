@@ -1,0 +1,36 @@
+meta {
+  name: 19 Pay
+  type: http
+  seq: 20
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/pay
+  body: none
+  auth: bearer
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+auth:bearer {
+  token: {{paymentsToken}}
+}
+
+vars:pre-request {
+  as: payments
+}
+
+tests {
+  test('200 paid and settled, by payments, with the figures of the attempt', () => {
+    expect(res.status).to.equal(200);
+    expect([res.body.status, res.body.settledStatus]).to.eql(['paid', 'settled']);
+    expect(res.body.paidBy.userName).to.equal('payments');
+    expect(res.body.paidAt).to.be.a('string');
+    expect(res.body.amountPayable).to.equal(bru.getVar('setProcessed').amountPayable);
+  });
+}

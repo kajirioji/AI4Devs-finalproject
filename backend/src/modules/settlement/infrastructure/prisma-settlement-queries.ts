@@ -64,6 +64,7 @@ export class PrismaSettlementQueries implements SettlementQueries {
       where: { batchId, account: { provider: { merchantId: { in: [...scope.merchantIds] } } } },
       select: {
         batchId: true,
+        importId: true,
         accountId: true,
         batchNo: true,
         attemptNo: true,
@@ -74,6 +75,7 @@ export class PrismaSettlementQueries implements SettlementQueries {
     if (batch === null) return null
     return {
       batchId: batch.batchId,
+      importId: batch.importId,
       accountId: batch.accountId,
       accountName: batch.account.name,
       batchNo: batch.batchNo,

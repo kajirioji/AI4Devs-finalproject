@@ -13,7 +13,12 @@ export function InvalidatedReviewNotice({ view }: { view: ValidationRunView }) {
   const review = view.run?.review
   if (!last || (review && Date.parse(review.reviewedAt) > Date.parse(last.invalidatedAt))) return null
 
-  const why = last.reason === 'rerun' ? s.rerun(last.newRunId) : s.inclusionChange
+  const why =
+    last.reason === 'rerun'
+      ? s.rerun(last.newRunId)
+      : last.reason === 'settlement_undone'
+        ? s.settlementUndone
+        : s.inclusionChange
   return (
     <section
       aria-label={s.label}

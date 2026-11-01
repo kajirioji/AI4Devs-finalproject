@@ -1,0 +1,25 @@
+meta {
+  name: Pay - analyst
+  type: http
+  seq: 68
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/pay
+  body: none
+  auth: inherit
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+tests {
+  test('analyst lacks payment.process: 403 forbidden, before the scope', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

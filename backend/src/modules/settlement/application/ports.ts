@@ -72,6 +72,28 @@ export interface SettlementRepository {
   process(command: ProcessCommand): Promise<{ batchId: string }>
 }
 
+export interface LifecycleCommand {
+  batchId: string
+  userId: number
+  /** Audit instant (paidAt, undoneAt and the AuditLog row). */
+  now: Date
+}
+
+export interface ReasonCommand extends LifecycleCommand {
+  reason: string
+}
+
+export interface UndoCommand extends ReasonCommand {
+  importId: string
+}
+
+/** The actions on an attempt, each in one transaction with its guard (settlement-lifecycle design D3, D4). */
+export interface SettlementLifecycleRepository {
+  pay(command: LifecycleCommand): Promise<void>
+  unpay(command: ReasonCommand): Promise<void>
+  undo(command: UndoCommand): Promise<void>
+}
+
 /** The view of an attempt read back from what was written (design D19). */
 export interface SettlementReader {
   /** With a scope, the previous accounts of the assigned channels outside it are hidden. */

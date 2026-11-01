@@ -9,8 +9,11 @@ import {
   NextBatchNumber,
   PAYABLE_LINE_CODES,
   PayableLine,
+  ReasonRequest,
+  SettlementNotCurrentDetails,
   SettlementPreview,
   SettlementRequest,
+  SettlementStateDetails,
   SettlementView,
   SettlementWarning,
   Skipped,
@@ -82,6 +85,11 @@ const view = {
   approvedBy: user,
   processedAt: '2026-10-19T15:40:03.120Z',
   settlementDate: '2026-10-24',
+  paidAt: null,
+  paidBy: null,
+  undoneAt: null,
+  undoneBy: null,
+  undoReason: null,
   channelsAssigned: [{ channelId: 1007, name: 'RAM-07', assignment: 'new_primary', previousAccount: null }],
   validationSummary: { runId: 12, persistent: 0, resolved: 0, blocking: 0, resolvedMissing: 0 },
   exports: {
@@ -239,6 +247,54 @@ describe('SettlementView and SettlementPreview', () => {
   it('accept a null validation summary for an attempt without a process audit', () => {
     expect(SettlementView.safeParse({ ...view, validationSummary: null }).success).toBe(true)
     expect(SettlementView.safeParse({ ...view, validationSummary: undefined }).success).toBe(false)
+  })
+})
+
+describe('SettlementView, payment and undo fields', () => {
+  const instant = '2026-10-20T15:00:00.000Z'
+
+  it('are null while they do not apply, and required', () => {
+    expect(view).toMatchObject({ paidAt: null, paidBy: null, undoneAt: null, undoneBy: null, undoReason: null })
+    for (const key of ['paidAt', 'paidBy', 'undoneAt', 'undoneBy', 'undoReason'])
+      expect(SettlementView.safeParse({ ...view, [key]: undefined }).success).toBe(false)
+  })
+
+  it('carry who paid and who undid, with their instants', () => {
+    const paid = { ...view, status: 'paid', settledStatus: 'settled', paidAt: instant, paidBy: user }
+    const undone = { ...view, status: 'undone', settledStatus: 'undone', undoneAt: instant, undoneBy: user }
+    expect(SettlementView.safeParse(paid).success).toBe(true)
+    expect(SettlementView.safeParse({ ...undone, undoReason: 'Wrong settlement date' }).success).toBe(true)
+    expect(SettlementView.safeParse({ ...paid, paidAt: '2026-10-20' }).success).toBe(false)
+  })
+})
+
+describe('ReasonRequest', () => {
+  it('takes a reason and returns it without the spaces of its ends', () => {
+    expect(ReasonRequest.parse({ reason: '  Wrong settlement date ' })).toEqual({ reason: 'Wrong settlement date' })
+    expect(ReasonRequest.safeParse({ reason: 'x'.repeat(500) }).success).toBe(true)
+  })
+
+  it('rejects a missing, empty, blank or too long reason, and anything else in the body', () => {
+    expect(ReasonRequest.safeParse({}).success).toBe(false)
+    expect(ReasonRequest.safeParse({ reason: '' }).success).toBe(false)
+    expect(ReasonRequest.safeParse({ reason: '   ' }).success).toBe(false)
+    expect(ReasonRequest.safeParse({ reason: 'x'.repeat(501) }).success).toBe(false)
+    expect(ReasonRequest.safeParse({ reason: 'ok', note: 'no' }).success).toBe(false)
+  })
+
+  it('counts the length after trimming', () => {
+    expect(ReasonRequest.safeParse({ reason: `  ${'x'.repeat(500)}  ` }).success).toBe(true)
+  })
+})
+
+describe('Details of the lifecycle errors', () => {
+  it('carry the status of the attempt', () => {
+    expect(SettlementStateDetails.safeParse({ status: 'paid' }).success).toBe(true)
+    expect(SettlementStateDetails.safeParse({ status: 'analyzed' }).success).toBe(false)
+  })
+
+  it('carry the state of the import for an attempt that is not its current one', () => {
+    expect(SettlementNotCurrentDetails.safeParse({ importStatus: 'analyzed', currentBatchId: null }).success).toBe(true)
   })
 })
 

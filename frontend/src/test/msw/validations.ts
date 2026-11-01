@@ -669,6 +669,28 @@ function findOccurrence(occurrenceId: string) {
   return null
 }
 
+/**
+ * Undoing the attempt of the import (settlement-lifecycle D6): its run is superseded without a replacement, and a review
+ * it had is invalidated. Called by the settlement fake, which moves the import itself.
+ */
+export function supersedeRunOnUndo(importId: string, by: UserName) {
+  const run = currentRun(importId)
+  if (!run) return
+  run.isCurrent = false
+  if (!run.review) return
+  state.invalidated.set(importId, {
+    runId: run.runId,
+    reviewedBy: run.review.reviewedBy,
+    reviewedAt: run.review.reviewedAt,
+    invalidatedBy: userRef(by),
+    invalidatedAt: auditInstant(now()),
+    reason: 'settlement_undone',
+    newRunId: null,
+    occurrenceId: null,
+  })
+  run.review = null
+}
+
 /** The review of the import is no longer valid: it goes back to analyzed and the invalidation is kept. */
 function invalidate(
   record: FakeImport,

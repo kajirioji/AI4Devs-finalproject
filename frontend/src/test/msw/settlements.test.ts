@@ -39,7 +39,7 @@ import {
   settlementMovement,
   settlementRequests,
 } from './settlements'
-import { seedValidationRun } from './validations'
+import { currentRunId, seedValidationRun } from './validations'
 
 async function call(as: UserName, method: string, path: string, body?: object) {
   const { accessToken } = issueTokens(as)
@@ -591,5 +591,71 @@ describe('fake settlement API: the downloads as #12 fixed them', () => {
     expect((await download('viewer', `/settlements/${missing}/export?type=summary`)).status).toBe(403)
     const notFound = await download('analyst', `/settlements/${missing}/export?type=summary`)
     expect([notFound.status, JSON.parse(notFound.text).code]).toEqual([404, 'not_found'])
+  })
+})
+
+describe('fake settlement API: pay, unpay and undo (settlement-lifecycle task 6.1)', () => {
+  function processed() {
+    const { importId } = seedImport('batch-clean', { status: 'validated' })
+    seedValidationRun(importId, undefined, { reviewedBy: 'analyst' })
+    return seedSettlement(importId, { batchNo: 123 })
+  }
+
+  it('answers each transition with the shape of the view, and moves the list row and the movements', async () => {
+    const view = processed()
+    seedAccountSettlements(view.accountId, [accountSettlement({ batchId: view.batchId, status: 'processed' })])
+    seedMovements(view.batchId, 'E', [settlementMovement()])
+
+    const paid = await call('payments', 'POST', `/settlements/${view.batchId}/pay`)
+    expect(paid.status).toBe(200)
+    expect(SettlementView.parse(paid.body)).toMatchObject({
+      status: 'paid',
+      settledStatus: 'settled',
+      paidBy: { userName: 'payments' },
+    })
+    const list = await call('payments', 'GET', `/accounts/${view.accountId}/settlements`)
+    expect((list.body as AccountSettlementsPage).items[0]).toMatchObject({ status: 'paid', settledStatus: 'settled' })
+    const movements = await call('payments', 'GET', `/settlements/${view.batchId}/transactions?type=E`)
+    expect((movements.body as SettlementTransactionsPage).items[0]!.settled).toBe(true)
+
+    const unpaid = await call('payments', 'POST', `/settlements/${view.batchId}/unpay`, { reason: ' Rejected ' })
+    expect(SettlementView.parse(unpaid.body)).toMatchObject({ status: 'processed', paidAt: null, paidBy: null })
+
+    const undone = await call('analyst', 'POST', `/settlements/${view.batchId}/undo`, { reason: ' Wrong date ' })
+    expect(SettlementView.parse(undone.body)).toMatchObject({
+      status: 'undone',
+      undoneBy: { userName: 'analyst' },
+      undoReason: 'Wrong date',
+    })
+  })
+
+  it('undo takes the import back to analyzed and supersedes its run', async () => {
+    const view = processed()
+    await call('analyst', 'POST', `/settlements/${view.batchId}/undo`, { reason: 'Wrong date' })
+
+    expect(importRecord(view.importId)).toMatchObject({ status: 'analyzed', currentBatchId: null })
+    expect(currentRunId(view.importId)).toBeNull()
+  })
+
+  it('answers the 409 of the status, the 403 of the permission and the 400 of the reason', async () => {
+    const view = processed()
+    const path = `/settlements/${view.batchId}`
+    expect((await call('analyst', 'POST', `${path}/pay`)).status).toBe(403)
+    expect((await call('viewer', 'POST', `${path}/undo`, { reason: 'x' })).status).toBe(403)
+    expect((await call('payments', 'POST', `${path}/undo`, { reason: 'x' })).status).toBe(403)
+    expect((await call('analyst', 'POST', `${path}/undo`, { reason: '  ' })).status).toBe(400)
+    expect((await call('payments', 'POST', `${path}/unpay`, { reason: 'x' })).body).toMatchObject({
+      code: 'settlement_not_paid',
+      details: { status: 'processed' },
+    })
+    await call('payments', 'POST', `${path}/pay`)
+    expect((await call('analyst', 'POST', `${path}/undo`, { reason: 'x' })).body).toMatchObject({
+      code: 'settlement_payment_not_removed',
+      details: { status: 'paid' },
+    })
+    expect((await call('payments', 'POST', `${path}/pay`)).body).toMatchObject({
+      code: 'settlement_not_processed',
+      details: { status: 'paid' },
+    })
   })
 })

@@ -26,11 +26,20 @@ export class PrismaMissingResolution implements MissingResolution {
                       AND st.[cycle] = vi.[cycle])`
   }
 
-  /** Missing findings resolved by this batch → persistent again; resolutions by hand are not touched. */
-  async reopenForBatch(tx: Prisma.TransactionClient, batchId: string): Promise<number> {
-    return tx.$executeRaw`
-      UPDATE [ValidationIssue]
+  /**
+   * Missing findings of current runs resolved by this batch → persistent again, with their ids (settlement-lifecycle
+   * design D5). A finding of a superseded run stays as evidence of that run; resolutions by hand are not touched.
+   */
+  async reopenForBatch(tx: Prisma.TransactionClient, batchId: string): Promise<number[]> {
+    const reopened = await tx.$queryRaw<{ issueId: number }[]>`
+      UPDATE vi
       SET [resolutionStatus] = 'persistent', [resolvedInBatchId] = NULL, [resolvedAt] = NULL
-      WHERE [resolvedInBatchId] = ${batchId} AND [issueType] = 'missing' AND [resolvedByUserId] IS NULL`
+      OUTPUT inserted.[issueId]
+      FROM [ValidationIssue] vi
+      JOIN [ValidationResult] vr ON vr.[resultId] = vi.[resultId]
+      JOIN [ValidationRun] run ON run.[runId] = vr.[runId]
+      WHERE vi.[resolvedInBatchId] = ${batchId} AND vi.[issueType] = 'missing' AND vi.[resolvedByUserId] IS NULL
+        AND run.[isSuperseded] = 0`
+    return reopened.map((r) => Number(r.issueId)).sort((a, b) => a - b)
   }
 }

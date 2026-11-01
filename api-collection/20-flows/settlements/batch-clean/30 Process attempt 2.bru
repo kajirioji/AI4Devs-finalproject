@@ -1,0 +1,44 @@
+meta {
+  name: 30 Process attempt 2
+  type: http
+  seq: 32
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({
+    runId: bru.getVar('setRunId'),
+    batchNo: bru.getVar('setBatchNo'),
+    batchFees: bru.getVar('setBatchFees'),
+  });
+}
+
+tests {
+  test('201 attempt 2 of the same number, with the figures of attempt 1 (the undone one is not a previous E)', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.batchNo).to.equal(bru.getVar('setBatchNo'));
+    expect(res.body.attemptNo).to.equal(2);
+    expect(res.body.status).to.equal('processed');
+    expect(res.body.batchId).to.not.equal(bru.getVar('setBatchId'));
+    expect(res.body.movements).to.eql({ E: 450, I: 10, R: 320 });
+    expect(res.body.amountPayable).to.equal(bru.getVar('setProcessed').amountPayable);
+  });
+}

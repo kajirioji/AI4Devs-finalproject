@@ -1,0 +1,40 @@
+meta {
+  name: 23 Unpay again
+  type: http
+  seq: 25
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/unpay
+  body: json
+  auth: bearer
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+body:json {
+  {
+    "reason": "Payment was rejected by the bank"
+  }
+}
+
+auth:bearer {
+  token: {{paymentsToken}}
+}
+
+vars:pre-request {
+  as: payments
+}
+
+tests {
+  test('a processed attempt has no payment: 409 settlement_not_paid', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('settlement_not_paid');
+    expect(res.body.details.status).to.equal('processed');
+  });
+}

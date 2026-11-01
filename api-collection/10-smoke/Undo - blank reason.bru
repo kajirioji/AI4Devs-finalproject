@@ -1,0 +1,31 @@
+meta {
+  name: Undo - blank reason
+  type: http
+  seq: 79
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/undo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "   "
+  }
+}
+
+tests {
+  test('a blank reason: 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

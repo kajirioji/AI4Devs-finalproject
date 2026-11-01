@@ -34,10 +34,10 @@ beforeAll(async () => {
     ).map((t) => t.transactionId)
   ;[x, y] = (await ofProvider(101, 2)) as [bigint, bigint]
   ;[foreign] = (await ofProvider(102, 1)) as [bigint]
-  // What an interrupted run left behind: batches 9711 and 9712 of these accounts, with their imports.
+  // What an interrupted run left behind: batches 9711 to 9716 of these accounts, with their imports.
   const leftovers = await prisma.settlementBatch.findMany({
     where: {
-      batchNo: { in: [9711, 9712] },
+      batchNo: { gte: 9711, lte: 9716 },
       accountId: { in: fixtureIds([accounts['ProviderA-EUR'], accounts['ProviderA-USD']], 'accounts') },
     },
     select: { importId: true },
@@ -192,7 +192,7 @@ describe('resolveForBatch and reopenForBatch', () => {
 
     const reopened = await prisma.$transaction((tx) => resolution.reopenForBatch(tx, batchB))
 
-    expect(reopened).toBe(1)
+    expect(reopened).toEqual([resolvedByB])
     expect(await issue(resolvedByB)).toEqual({
       resolutionStatus: 'persistent',
       resolvedInBatchId: null,
@@ -201,5 +201,55 @@ describe('resolveForBatch and reopenForBatch', () => {
     })
     expect(await issue(resolvedByC)).toMatchObject({ resolutionStatus: 'resolved', resolvedInBatchId: batchC })
     expect(await issue(byHand)).toMatchObject({ resolutionStatus: 'resolved' })
+  })
+})
+
+describe('reopenForBatch and the current runs (settlement-lifecycle design D5)', () => {
+  const resolvedBy = (issueId: number, batchId: string) =>
+    prisma.validationIssue.update({
+      where: { issueId },
+      data: { resolutionStatus: 'resolved', resolvedInBatchId: batchId, resolvedAt: AT },
+    })
+
+  it('leaves a finding of a superseded run resolved, as evidence of that run', async () => {
+    const importA = await importOf('ProviderA-USD')
+    const [inSuperseded] = await runWithFindings(importA, [{ transactionId: y, cycle: 'E' }], true)
+    const [inCurrent] = await runWithFindings(importA, [{ transactionId: y, cycle: 'E' }])
+    const batchId = await batchWith('ProviderA-EUR', 9713, y, 'E')
+    await resolvedBy(inSuperseded!, batchId)
+    await resolvedBy(inCurrent!, batchId)
+
+    const reopened = await prisma.$transaction((tx) => resolution.reopenForBatch(tx, batchId))
+
+    expect(reopened).toEqual([inCurrent])
+    expect(await issue(inSuperseded!)).toMatchObject({ resolutionStatus: 'resolved', resolvedInBatchId: batchId })
+  })
+
+  it('keeps the detail and the identity of the reopened finding', async () => {
+    const [issueId] = await runWithFindings(await importOf('ProviderA-USD'), [{ transactionId: y, cycle: 'I' }])
+    const batchId = await batchWith('ProviderA-EUR', 9714, y, 'I')
+    await prisma.validationIssue.update({ where: { issueId: issueId! }, data: { detailJson: '{"days":3}' } })
+    await resolvedBy(issueId!, batchId)
+
+    await prisma.$transaction((tx) => resolution.reopenForBatch(tx, batchId))
+
+    expect(
+      await prisma.validationIssue.findUniqueOrThrow({
+        where: { issueId: issueId! },
+        select: { transactionId: true, cycle: true, detailJson: true, resolutionStatus: true },
+      }),
+    ).toEqual({ transactionId: y, cycle: 'I', detailJson: '{"days":3}', resolutionStatus: 'persistent' })
+  })
+
+  // Accepted risk (design, Risks; HU2 CA9): the finding goes back to persistent although another live batch covers it.
+  it('reopens a finding that another live batch also covers', async () => {
+    const [issueId] = await runWithFindings(await importOf('ProviderA-USD'), [{ transactionId: x, cycle: 'I' }])
+    const undone = await batchWith('ProviderA-EUR', 9715, x, 'I')
+    await batchWith('ProviderA-USD', 9716, x, 'I')
+    await resolvedBy(issueId!, undone)
+
+    await prisma.$transaction((tx) => resolution.reopenForBatch(tx, undone))
+
+    expect((await issue(issueId!)).resolutionStatus).toBe('persistent')
   })
 })

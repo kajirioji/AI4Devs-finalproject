@@ -6,6 +6,7 @@ import type {
   BatchNoTakenDetails,
   ChannelAssignmentNotConfirmedDetails,
   ImportNotValidatedDetails,
+  SettlementStateDetails,
 } from '@recon/shared'
 import { api, unwrap } from '@/lib/api/client'
 import type { paths } from '@/lib/api/schema.gen'
@@ -15,10 +16,10 @@ import type { AuditInstant, BusinessDate } from '@/lib/format'
 export type { AuditInstant, BusinessDate }
 
 // Dates by kind: business dates (date ranges, the settlement date, fee validity, the event and reserve release dates
-// of a movement) are New York dates, sent with a Z when they carry a time; the processing instant is a UTC audit
-// instant.
+// of a movement) are New York dates, sent with a Z when they carry a time; the instants of processing, paying and
+// undoing are UTC audit instants.
 type BusinessKey = 'min' | 'max' | 'settlementDate' | 'startDate' | 'endDate' | 'eventDate' | 'expectedReserveReleaseAt'
-type AuditKey = 'processedAt'
+type AuditKey = 'processedAt' | 'paidAt' | 'undoneAt'
 type Brand<V, B> = V extends string ? B : V
 /** The generated type with each date field typed by its kind, at any depth. */
 type Dated<T> = T extends readonly (infer U)[]
@@ -97,6 +98,8 @@ export interface ErrorDetails {
   batch_no_taken: BatchNoTakenDetails
   channel_assignment_not_confirmed: ChannelAssignmentNotConfirmedDetails
   batch_fee_invalid: BatchFeeInvalidDetails
+  settlement_not_processed: SettlementStateDetails
+  settlement_not_paid: SettlementStateDetails
 }
 
 export type ExportType = NonNullable<paths[ExportPath]['get']['parameters']['query']>['type']
@@ -109,6 +112,10 @@ export type SettledStatus = AccountSettlement['settledStatus']
 export type AccountSettlementsQuery = NonNullable<paths[AccountSettlementsPath]['get']['parameters']['query']>
 /** The date `from` and `to` filter: the business settlement date or the New York day of the processing instant. */
 export type SettlementDateField = NonNullable<AccountSettlementsQuery['dateField']>
+
+/** The attempts of an import, newest first (#12). */
+export type ImportSettlements = Dated<ApiResponse<ProcessPath, 'get'>>
+export type ImportSettlementAttempt = ImportSettlements['items'][number]
 
 /** The movements of one cycle of an attempt, in the stable order of #12. */
 export type SettlementTransactionsPage = Dated<ApiResponse<TransactionsPath, 'get'>>
@@ -149,6 +156,24 @@ export const processSettlement = (importId: string, body: SettlementRequest) =>
 /** The attempt as written; the same SettlementView as the 201 of processing. */
 export const getSettlement = (batchId: string) =>
   unwrap(api.GET('/api/v1/settlements/{batchId}', { params: { path: { batchId } } })) as Promise<SettlementView>
+
+export const getImportSettlements = (importId: string) =>
+  unwrap(
+    api.GET('/api/v1/imports/{importId}/settlements', { params: { path: { importId } } }),
+  ) as Promise<ImportSettlements>
+
+export const paySettlement = (batchId: string) =>
+  unwrap(api.POST('/api/v1/settlements/{batchId}/pay', { params: { path: { batchId } } })) as Promise<SettlementView>
+
+export const unpaySettlement = (batchId: string, reason: string) =>
+  unwrap(
+    api.POST('/api/v1/settlements/{batchId}/unpay', { params: { path: { batchId } }, body: { reason } }),
+  ) as Promise<SettlementView>
+
+export const undoSettlement = (batchId: string, reason: string) =>
+  unwrap(
+    api.POST('/api/v1/settlements/{batchId}/undo', { params: { path: { batchId } }, body: { reason } }),
+  ) as Promise<SettlementView>
 
 /** The attempts of an account; the days of `from` and `to` travel as typed, YYYY-MM-DD, never through a Date. */
 export const getAccountSettlements = (accountId: string, query: AccountSettlementsQuery, signal?: AbortSignal) =>

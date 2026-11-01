@@ -1,0 +1,31 @@
+meta {
+  name: Unpay - analyst
+  type: http
+  seq: 72
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/unpay
+  body: json
+  auth: inherit
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "Smoke test"
+  }
+}
+
+tests {
+  test('analyst lacks payment.process: 403 forbidden, before the scope', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

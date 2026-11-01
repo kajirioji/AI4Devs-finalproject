@@ -232,6 +232,7 @@ export const strings = {
       `The review by ${reviewer} on ${reviewedAt} was invalidated by ${by} on ${at}: ${why}.`,
     rerun: (newRunId: number | null) => `the validations ran again${newRunId ? ` (run #${newRunId})` : ''}`,
     inclusionChange: 'an inclusion was changed',
+    settlementUndone: 'the settlement attempt was undone',
   },
 
   /** Answers of the API to the actions of the drawer, by code (design D3). */

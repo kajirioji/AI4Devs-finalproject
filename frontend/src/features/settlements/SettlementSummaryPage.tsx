@@ -11,6 +11,7 @@ import type { Cycle, SettlementView } from './contract'
 import { TotalsByBrand, TotalsByType } from './FiguresTables'
 import { PayableBreakdown } from './PayableBreakdown'
 import { settlementQuery } from './queries'
+import { SummaryAttempts } from './SummaryAttempts'
 import { SummaryExports } from './SummaryExports'
 import { SummaryFees, SummaryReserves } from './SummaryFees'
 import { SummaryHeader } from './SummaryHeader'
@@ -76,6 +77,7 @@ function Summary({ view }: { view: SettlementView }) {
   return (
     <section className="flex flex-col gap-4">
       <SummaryHeader view={view} />
+      <SummaryAttempts view={view} />
       <Tabs
         value={tab}
         // A new history entry per tab: Back returns to the previous one.
@@ -142,7 +144,7 @@ function Summary({ view }: { view: SettlementView }) {
 
 /**
  * Reconciliation › Settlement Summary of an attempt (design D1, D11): the 201 of Process seeded in the cache or, on
- * a reload, GET /settlements/{id}. Anyone in scope may read it; nothing on it writes.
+ * a reload, GET /settlements/{id}. Anyone in scope may read it; only the actions of its header write.
  */
 export function SettlementSummaryPage() {
   const { batchId } = useParams({ from: '/app/settlements/$batchId' })
@@ -162,5 +164,6 @@ export function SettlementSummaryPage() {
       </div>
     )
   }
-  return <Summary view={query.data} />
+  // The key: what an action left on screen belongs to its attempt, and a link can reach another one already in the cache.
+  return <Summary key={batchId} view={query.data} />
 }
