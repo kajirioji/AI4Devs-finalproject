@@ -218,9 +218,9 @@ Lo que el usuario ve en cada paso del flujo principal:
 
 ### 1.4. Instrucciones de instalación
 
-[![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-2-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-2-MVP)
+[![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-3-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-3-MVP)
 
-Procedimiento de la Entrega 2, pensado para seguirse paso a paso en un clon limpio. Todos los datos son sintéticos: el seed crea el mundo de demostración y los archivos de prueba están en [`data/samples/`](data/samples/). Los comandos se ejecutan desde la raíz del repositorio; valen igual en PowerShell, Git Bash, macOS o Linux salvo donde se indica.
+Procedimiento pensado para seguirse paso a paso en un clon limpio. Todos los datos son sintéticos: el seed crea el mundo de demostración y los archivos de prueba están en [`data/samples/`](data/samples/). Los comandos se ejecutan desde la raíz del repositorio; valen igual en PowerShell, Git Bash, macOS o Linux salvo donde se indica.
 
 Esta sección instala el entorno local. Para publicar la aplicación en un servidor, sigue la [guía de despliegue](docs/deploy.md).
 
@@ -245,7 +245,7 @@ Notas por sistema:
 **2. Clonar e instalar dependencias**
 
 ```bash
-git clone -b feature/entrega-2-MVP https://github.com/kajirioji/AI4Devs-finalproject.git
+git clone -b feature/entrega-3-MVP https://github.com/kajirioji/AI4Devs-finalproject.git
 cd AI4Devs-finalproject
 corepack enable          # activa la versión de pnpm fijada en package.json
 pnpm install             # instala todo el monorepo e instala los hooks de git (husky)
@@ -580,7 +580,7 @@ flowchart LR
 
 ### 2.5. Seguridad
 
-> **Estado en la Entrega 2.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios y lo que depende del despliegue (HTTPS en el túnel, red interna) llegan con la Entrega 3.
+> **Estado en la Entrega 2.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios llega con la Entrega 3. Lo que depende del despliegue (HTTPS en el túnel, red interna) ya está en marcha y se describe en [2.4](#24-infraestructura-y-despliegue).
 
 **Perfiles y permisos.** Cada perfil agrupa acciones autorizadas. Se separan consulta y exports (`reports.view`), reconciliación y deshacer (`settlement.process`), registro y retiro de pago (`payment.process`), cuentas y reglas (`account.manage`), consulta y edición de fees (`fee.view`, `fee.manage`) y administración de usuarios, perfiles y asignaciones (`user.manage`). Administrar cuentas no concede administración de usuarios.
 
