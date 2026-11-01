@@ -627,7 +627,7 @@ En ciclo R (la reserva no tiene estado y no se libera dos veces), un hallazgo SH
 - **THEN** recibe `200` y el hallazgo queda sin ninguna aparición incluida
 
 ### Requirement: Invalidación de la revisión
-Una corrida nueva sobre un import `validated` o un cambio de inclusión sobre un import `validated` SHALL devolverlo a `analyzed` en la misma transacción y registrar en `AuditLog` la revisión invalidada: la corrida revisada, quién y cuándo revisó, quién y cuándo la invalidó y el motivo (`rerun` o `inclusion_change`). `GET validations` SHALL devolver la última como `lastInvalidatedReview`.
+Una corrida nueva sobre un import `validated` o un cambio de inclusión sobre un import `validated` SHALL devolverlo a `analyzed` en la misma transacción y registrar en `AuditLog` la revisión invalidada: la corrida revisada, quién y cuándo revisó, quién y cuándo la invalidó y el motivo (`rerun`, `inclusion_change` o `settlement_undone`, este al deshacer el intento). `GET validations` SHALL devolver la última como `lastInvalidatedReview`.
 
 #### Scenario: Invalidada al re-ejecutar
 - **GIVEN** `batch-issues` revisado por `analyst` sobre la corrida 1

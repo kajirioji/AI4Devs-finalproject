@@ -469,7 +469,7 @@ La vista previa y la respuesta SHALL traer `warnings` con código y, cuando apli
 - THEN responde `200` con `batchNoAvailable = false`, para que el formulario lo avise antes de procesar
 
 ### Requirement: Siguiente número de batch
-`GET /api/v1/accounts/{id}/batch-number/next` SHALL devolver el mayor `batchNo` de la cuenta en cualquier estado + 1 con `attemptNo = 1`. Con `importId` de un import de la cuenta que tiene un intento `undone` y ningún vigente, SHALL devolver ese mismo número y su siguiente intento (`reason = "reprocess"`). Exige autenticación y alcance.
+`GET /api/v1/accounts/{id}/batch-number/next` SHALL devolver el mayor `batchNo` de la cuenta en cualquier estado + 1 con `attemptNo = 1`. Con `importId` de un import de la cuenta que tiene un intento `undone` y ningún vigente, SHALL devolver ese mismo número y su siguiente intento (`reason = "reprocess"`), salvo que otro import de la cuenta ya tenga un intento vigente con ese número: entonces SHALL devolver el siguiente número libre (`reason = "next"`). Exige autenticación y alcance.
 
 #### Scenario: Número propuesto de batch-clean
 - WHEN `analyst` pide el siguiente número de ProviderA-USD
