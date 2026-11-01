@@ -30,7 +30,7 @@ Comprobados leyendo el código y con un build de prueba en una copia temporal.
 - `scripts/deploy.sh` con `build`, `up`, `migrate`, `seed`, `logs`, `ps` y `down`. Se elige el script frente a `pnpm deploy:*` para que el servidor no necesite Node ni pnpm; solo Docker y Git. `seed` pide confirmación porque borra los datos.
 - CI: job que construye las imágenes sin publicarlas y valida el compose.
 - La Entrega 3 se trabaja sobre `feature/entrega-3-MVP`: los PR apuntan ahí, la rama se añade a `on.push.branches` de la CI y la regla 3 de `CLAUDE.md` pasa a nombrarla.
-- `docs/deploy.md` para quien no ha hecho esto antes. README §1.4 enlaza a ese documento, y §2.4 y §0.4 pasan a describir el estado real, sin nombre ni ubicación del servidor (hoy el diagrama de §2.4 incluye un identificador de máquina, `D01`, que se elimina).
+- `docs/deploy.md` para quien no ha hecho esto antes. README §1.4 enlaza a ese documento, y §2.4 y §0.4 pasan a describir el estado real, sin nombre ni ubicación del servidor (hoy el diagrama de §2.4 incluye un identificador de máquina, que se elimina).
 
 **Decisión pendiente del issue:** SQL Server va en el mismo compose por defecto, con el override para uno externo. README §2.4 hablaba de "máquina dedicada" y se corrige en este change.
 
