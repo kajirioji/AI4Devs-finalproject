@@ -412,7 +412,7 @@ Mientras el README no fije cómo un valor de celda se traduce a un gateway, una 
 - **THEN** recibe `200`, el análisis conserva ambos valores en `rawData`, `ImportRow.txnDate` queda `null` y ninguna advertencia se emite por ello
 
 ### Requirement: Máquina de estados del import
-SHALL admitirse solo estas transiciones: `uploaded → mapped` y `mapped → mapped` (confirmar pareo); `mapped → analyzed` (analizar); `analyzed → validated` (decisión de conjunto, `POST review`); `validated → analyzed` (validar de nuevo o cambiar una inclusión, que invalidan la revisión, P1 y P4); `validated → processed` (procesar el batch, `POST settlements`); `uploaded`, `mapped`, `analyzed` o `validated → cancelled` (cancelar).
+SHALL admitirse solo estas transiciones: `uploaded → mapped` y `mapped → mapped` (confirmar pareo); `mapped → analyzed` (analizar); `analyzed → validated` (decisión de conjunto, `POST review`); `validated → analyzed` (validar de nuevo o cambiar una inclusión, que invalidan la revisión, P1 y P4); `validated → processed` (procesar el batch, `POST settlements`); `processed → analyzed` (deshacer su intento vigente, `POST settlements/{id}/undo`); `uploaded`, `mapped`, `analyzed` o `validated → cancelled` (cancelar).
 
 #### Scenario: Revisar pasa a validated
 - **GIVEN** un import en `analyzed` con una corrida vigente sin bloqueantes
@@ -427,7 +427,12 @@ SHALL admitirse solo estas transiciones: `uploaded → mapped` y `mapped → map
 #### Scenario: Procesar pasa a processed
 - **GIVEN** un import `validated` con su revisión vigente
 - **WHEN** `analyst` llama a `POST /api/v1/imports/{id}/settlements` con el `runId` revisado
-- **THEN** el import pasa a `processed` con `currentBatchId` del intento creado, y desde ahí no admite validar, cambiar inclusiones ni cancelar
+- **THEN** el import pasa a `processed` con `currentBatchId` del intento creado, y mientras siga ahí no admite validar, cambiar inclusiones ni cancelar
+
+#### Scenario: Deshacer devuelve a analyzed
+- **GIVEN** un import `processed` cuyo intento vigente está `processed`
+- **WHEN** `analyst` lo deshace con un motivo
+- **THEN** el import pasa a `analyzed` con `currentBatchId = null`, y vuelve a admitir validar, cambiar inclusiones y cancelar
 
 #### Scenario: Tabla de transiciones
 - **WHEN** se aplica cada acción a cada estado
@@ -1185,3 +1190,5 @@ En los pasos Files y Mapping, cada archivo del import SHALL verse como un bloque
 #### Scenario: Archivo en cola
 - **WHEN** `analyst` suelta un archivo y aparece como `Uploading…`
 - **THEN** su entrada se ve sin tono, con el borde discontinuo de la cola, hasta que el API lo acepta
+
+
