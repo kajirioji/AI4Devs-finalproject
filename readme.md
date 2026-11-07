@@ -328,8 +328,8 @@ Arranques siguientes: `pnpm db:up` y `pnpm dev`; no hace falta migrar ni sembrar
 | `pnpm lint` · `pnpm typecheck` | Biome y TypeScript en todo el monorepo | solo el paso 2 y `pnpm db:generate` |
 | `pnpm test` | pruebas unitarias con Vitest (dominio, backend y frontend) | solo el paso 2 y `pnpm db:generate` |
 | `pnpm --filter @recon/backend test:integration` | pruebas de integración del backend contra el SQL Server local | pasos 3 y 4 (base migrada y sembrada) |
-| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke` | pasos 4 y 5 con `pnpm dev` en marcha, y `api-collection/.env` (paso 3) |
-| `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
+| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke`. También corre en la CI (job `e2e`) | pasos 4 y 5 con `pnpm dev` en marcha, y `api-collection/.env` (paso 3) |
+| `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)). También corre en la CI (job `e2e`) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
 
 Preparación de una sola vez para el E2E (la CLI de Bruno ya llega con `pnpm install`):
 
@@ -338,7 +338,7 @@ Preparación de una sola vez para el E2E (la CLI de Bruno ya llega con `pnpm ins
 pnpm --filter @recon/e2e exec playwright install chromium
 ```
 
-Las pruebas de integración, la colección y el E2E crean sus propios imports y batches sobre la base local; `pnpm db:seed` la devuelve al estado inicial. La CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) ejecuta en cada pull request lint, typecheck, pruebas unitarias, la comprobación del contrato OpenAPI y el build del frontend; en otro job, migración, seed y pruebas de integración contra un SQL Server 2022 efímero; y gitleaks. La colección Bruno y el E2E se ejecutan en local; su job de CI queda para la Entrega 3 ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)).
+Las pruebas de integración, la colección y el E2E crean sus propios imports y batches sobre la base local; `pnpm db:seed` la devuelve al estado inicial. La CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) ejecuta en cada pull request lint, typecheck, pruebas unitarias, la comprobación del contrato OpenAPI y el build del frontend; en otro job, migración, seed y pruebas de integración contra un SQL Server 2022 efímero; y gitleaks. Desde la Entrega 3 ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)), el job `e2e` corre la colección Bruno y el E2E de Playwright contra el API compilado y la web servida con `vite preview`, sobre su propio SQL Server efímero. Ese job migra y siembra como `recon_app`, ejecuta `pnpm test:api`, vuelve a sembrar para que el E2E no dependa de lo que deja la colección y ejecuta `pnpm test:e2e`. Solo si el E2E falla, sube el informe de Playwright como artifact `playwright-report`, sin traza ni vídeo, durante 7 días. En local, los comandos y sus requisitos son los de la tabla.
 
 **Problemas frecuentes**
 
@@ -627,7 +627,7 @@ La estrategia sigue el principio del máster: el test es la especificación dete
 
 Todavía no corre en CI: el job llega con la suite completa en la Entrega 3.
 
-**En pipeline.** Unitarios e integración ya corren en cada pull request desde la Entrega 2. Para la Entrega 3: E2E y colección Bruno en la CI ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)) y objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
+**En pipeline.** Unitarios e integración corren en cada pull request desde la Entrega 2. Desde la Entrega 3, también la colección Bruno y el E2E, en el job `e2e` ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)). Queda pendiente el objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
 ---
 

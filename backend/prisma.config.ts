@@ -14,7 +14,8 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    // DATABASE_URL wins when set (CI); otherwise build it from the same DB_* variables the seed uses (see .env.example)
+    // DATABASE_URL wins when set (only the CI integration job sets it, as sa); otherwise, as in local and in the CI
+    // e2e job, build it from the same DB_* variables the seed uses (see .env.example)
     url:
       process.env.DATABASE_URL ??
       `sqlserver://${process.env.DB_HOST ?? 'localhost'}:${process.env.DB_PORT ?? '1433'};database=${process.env.DB_NAME ?? 'ReconTool'};user=${process.env.DB_USER ?? 'recon_app'};password={${process.env.RECON_APP_PASSWORD ?? ''}};encrypt=true;trustServerCertificate=true`,

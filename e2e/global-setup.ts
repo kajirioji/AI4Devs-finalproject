@@ -1,7 +1,9 @@
 // Fails before the first step when the app or the API is not up (spec "Aplicación no levantada").
 const APP = 'http://localhost:5173'
-const HOW =
-  'Start the database, the seed and the app first: `pnpm db:up`, `pnpm db:seed` and `pnpm dev` (in another terminal).'
+// In the CI the steps of the e2e job start them (ci-e2e design D2, D7); in local, the person does.
+const HOW = process.env.CI
+  ? 'The e2e job did not get the app up: see its wait step and the API and web logs it prints at the end of the job.'
+  : 'Start the database, the seed and the app first: `pnpm db:up`, `pnpm db:seed` and `pnpm dev` (in another terminal).'
 
 async function responds(url: string): Promise<boolean> {
   try {

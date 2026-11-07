@@ -1,5 +1,6 @@
-// Local smoke of the import flow (design D11): Gherkin through playwright-bdd against the app and API the person
-// starts with `pnpm db:up`, `pnpm db:seed` and `pnpm dev`. No webServer and no CI job yet (Entrega 3).
+// E2E suite: Gherkin through playwright-bdd against the app and API already running. No webServer: in local the
+// person starts them with `pnpm db:up`, `pnpm db:seed` and `pnpm dev`; in the CI, the steps of the e2e job do
+// (ci-e2e design D2).
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
@@ -9,6 +10,8 @@ import { defineBddConfig } from 'playwright-bdd'
 const rootEnv = fileURLToPath(new URL('../.env', import.meta.url))
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv)
 
+const ci = Boolean(process.env.CI)
+
 const testDir = defineBddConfig({
   features: 'features/**/*.feature',
   steps: 'steps/**/*.ts',
@@ -17,12 +20,15 @@ const testDir = defineBddConfig({
 export default defineConfig({
   testDir,
   globalSetup: './global-setup.ts',
+  // A forgotten .only must not leave a trimmed suite green in the CI (ci-e2e design D7).
+  forbidOnly: ci,
   fullyParallel: false,
   workers: 1,
   retries: 0,
   timeout: 120_000,
   expect: { timeout: 15_000 },
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // In the CI a failure also shows up as an annotation on the pull request.
+  reporter: ci ? [['list'], ['html', { open: 'never' }], ['github']] : [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:5173',
     // Well below the test timeout, so a step that hangs fails while its finally and the cleanup still have time.

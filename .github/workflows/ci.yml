@@ -75,6 +75,133 @@ jobs:
           pnpm db:seed
       - run: pnpm --filter @recon/backend test:integration
 
+  e2e:
+    # One job for both suites, with a fresh seed between them (ci-e2e design D1, #111).
+    name: e2e (Bruno · Playwright)
+    runs-on: ubuntu-latest
+    needs: check
+    # About 5–6 min when green: a hung step must not hold the runner for the default 6 hours.
+    timeout-minutes: 20
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Ci_E2e_Passw0rd2026"
+          MSSQL_PID: Developer
+        ports: ["1433:1433"]
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_E2e_Passw0rd2026' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    # Throwaway values for the ephemeral CI environment, none from a template (design D5). The app, the migration
+    # and the seed connect as recon_app, as in local; sa only runs init.sql.
+    env:
+      DB_HOST: localhost
+      DB_PORT: "1433"
+      DB_NAME: ReconTool
+      DB_USER: recon_app
+      RECON_APP_PASSWORD: "Ci_E2e_App!2026"
+      SEED_PASSWORD: "Ci_E2e_Seed!2026"
+      JWT_SECRET: "ci-only-throwaway-e2e-jwt-secret-not-real-0002"
+      SEED_USER: analyst
+      SEED_VIEWER_USER: viewer
+      SEED_PAYMENTS_USER: payments
+      SEED_ADMIN_USER: admin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: create the database and recon_app (infra/mssql/init.sql)
+        run: |
+          docker cp infra/mssql/init.sql ${{ job.services.mssql.id }}:/tmp/init.sql
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd \
+            -S localhost -U sa -P 'Ci_E2e_Passw0rd2026' -C -b -i /tmp/init.sql \
+            -v DB_NAME="$DB_NAME" RECON_APP_PASSWORD="$RECON_APP_PASSWORD"
+      - run: pnpm db:generate
+      - name: migrate + seed
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+      - name: build shared, API and web
+        run: |
+          pnpm --filter @recon/shared build
+          pnpm --filter @recon/backend build
+          pnpm --filter @recon/frontend build
+      # Production build, not pnpm dev (design D2): the compiled API and vite preview, which keeps the /api proxy.
+      - name: start API and web
+        run: |
+          nohup pnpm --filter @recon/backend start > "$RUNNER_TEMP/api.log" 2>&1 &
+          nohup pnpm --filter @recon/frontend preview --port 5173 --strictPort > "$RUNNER_TEMP/web.log" 2>&1 &
+      - name: wait for API and web
+        run: |
+          for _ in $(seq 1 45); do
+            if curl -fsS --max-time 5 -o /dev/null http://localhost:3000/api/v1/health \
+              && curl -fsS --max-time 5 -o /dev/null http://localhost:5173/api/v1/health; then
+              echo "API and web answer"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API or web did not answer within about 90 s"
+          echo "--- api.log"; tail -n 50 "$RUNNER_TEMP/api.log"
+          echo "--- web.log"; tail -n 50 "$RUNNER_TEMP/web.log"
+          exit 1
+      # Browser cache keyed by the installed Playwright version (design D4).
+      - name: Playwright version
+        id: playwright
+        run: |
+          v="$(pnpm --filter @recon/e2e exec playwright --version | awk '{print $2}')"
+          # An empty version would make one cache key for every Playwright release.
+          if [ -z "$v" ]; then echo "Could not read the Playwright version"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Playwright browser cache
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - name: install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @recon/e2e exec playwright install --with-deps chromium
+      - name: install Chromium system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm --filter @recon/e2e exec playwright install-deps chromium
+      - name: API collection (Bruno)
+        run: pnpm test:api
+      # The collection leaves batch-clean processed and RAM-07 assigned (#111): seed again, even if it failed.
+      - name: seed again
+        if: ${{ !cancelled() }}
+        run: pnpm db:seed
+      - name: E2E (Playwright)
+        id: e2e
+        if: ${{ !cancelled() }}
+        run: pnpm test:e2e
+      # Only when the E2E fails, not when only Bruno does: a red collection must not upload the report of a green E2E.
+      # Without trace nor video (off in playwright.config.ts) and with a short retention (design D6).
+      - name: Playwright report
+        if: ${{ !cancelled() && steps.e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+      # The API and web logs stay in the job log, never in an artifact (design D6; global-setup.ts points here).
+      # Also when cancelled, so that a job stopped by timeout-minutes still shows them.
+      - name: API and web logs
+        if: ${{ failure() || cancelled() }}
+        run: |
+          for log in api web; do
+            echo "--- $log.log (last 200 lines)"
+            tail -n 200 "$RUNNER_TEMP/$log.log" 2>/dev/null || echo "(no $log.log: the step that starts it did not run)"
+          done
+
   images:
     name: deployment images
     runs-on: ubuntu-latest
